@@ -65,11 +65,13 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
         {
             'variable':[
                 'surface_solar_radiation_downwards',
-                'maximum_2m_temperature_since_previous_post_processing',
-                'minimum_2m_temperature_since_previous_post_processing',
                 'total_precipitation',
                 '10m_u_component_of_wind','10m_v_component_of_wind',
-                '2m_dewpoint_temperature'                            
+                '2m_dewpoint_temperature',   
+                '2m_temperature', 'evaporation_from_the_top_of_canopy',
+                'evaporation_from_vegetation_transpiration',
+                'evapotranspiration', 'potential_evaporation',
+                'volumetric_soil_water_layer_1'                         
             ],
             'product_type':'reanalysis',
             'year':f"{year:d}",
@@ -101,7 +103,7 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
             'area' : area,
             'format':'netcdf'
         },
-        (Path(output_folder)/f"{region:s}_{year:d}{month:02d}.nc").as_posix())
+        (Path(output_folder)/f"{region:s}.{year:d}_{month:02d}.nc").as_posix())
 
         
 if __name__ == "__main__":
