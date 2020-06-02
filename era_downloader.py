@@ -101,7 +101,7 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
             'area' : area,
             'format':'netcdf'
         },
-        (Path(output_folder)/f"{region:s}_{year:d}.nc").as_posix())
+        (Path(output_folder)/f"{region:s}_{year:d}{month:02d}.nc").as_posix())
 
         
 if __name__ == "__main__":
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                        mylat=mylat, mylon=mylon)
     
     # create a thread pool of 4 threads
-    years = np.arange(2013,2021).astype(np.int)
+    years = np.arange(2000,2021).astype(np.int)
     months = np.arange(1, 13).astype(np.int)
     with ThreadPoolExecutor(max_workers=8) as executor:
         for year in years:
