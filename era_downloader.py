@@ -40,20 +40,28 @@ if not LOG.handlers:
 LOG.propagate = False
 
 def grab_era5(month, year, output_folder, region, mylat, mylon):
-    """A function to downlaod the ERA5 data for one year for a given location.
-    Note that this takes a while! Also, you need to have the Copernicus Data
-    Service API configured for this to work.
+    """A function to download ERA5 Lande data for one month. Assumes
+    the Copernicus Data Service API works and is properly configured.
+
+    Downloaded files have names `{region}.{year}_{month}.nc`.
+
+    Function checks whether the file already exists before requesting
+    the data, as requesting the data takes a while.
     
     Parameters
     ----------
-    output_fname : str
-        The output file name. This will be a netCDF file
-    year : int
-        The year of interest. Must lie within the ERA5 years!
-    mylat : float
-        Latitude in decimal degrees.
+    month: int
+        The month number
+    year: int
+        The year number
+    output_folder : str
+        The output folder where the files will be saved to.
+    region: str
+        Name of the region. Useful for saving the data.
+    mylat : 2-tuple, 2-list
+        North and South Latitudes in decimal degrees.
     mylon : float
-        Longitude in decimal degrees.
+        West and East Longitudes in decimal degrees.
     """
     output_nc_file = (Path(output_folder)/f"{region:s}.{year:d}_{month:02d}.nc")
     if not output_nc_file.exists():
