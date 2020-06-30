@@ -71,19 +71,15 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
             f"{int(mylat[1]):d}/{int(mylon[1]):d}"
         #[60, -10, 50, 2], # North, West, South, East
         c = cdsapi.Client()                
-        c.retrieve(
-            'reanalysis-era5-land',
-            {
-                'variable':[
-                    'surface_solar_radiation_downwards',
-                    'total_precipitation',
-                    '10m_u_component_of_wind','10m_v_component_of_wind',
-                    '2m_dewpoint_temperature',   
-                    '2m_temperature', 'evaporation_from_the_top_of_canopy',
-                    'evaporation_from_vegetation_transpiration',
-                    'evapotranspiration', 'potential_evaporation',
-                    'volumetric_soil_water_layer_1'                         
-                ],
+        c.retrieve('reanalysis-era5-single-levels',
+        {
+        'format': 'netcdf',
+        'variable': [
+            '10m_u_component_of_wind', '10m_v_component_of_wind', '2m_dewpoint_temperature',
+            '2m_temperature', 'evaporation', 'potential_evaporation',
+            'surface_solar_radiation_downwards', 'total_precipitation', 'volumetric_soil_water_layer_1',
+            'volumetric_soil_water_layer_2', 'volumetric_soil_water_layer_3', 'volumetric_soil_water_layer_4',
+        ],
                 'product_type':'reanalysis',
                 'year':f"{year:d}",
                 'month':f"{month:02d}",
