@@ -30,18 +30,18 @@ def write_tif(arr, var, year, loc, geoT, srs):
     print(f"{fname_out} saved")
 
     
-def to_sensible_format():
+def to_sensible_format(loc, year, month, ):
 
-    p = Path("/data/geospatial_08/ucfajlg/ERA5_meteo/UK/")
-    g = gdal.Open('NETCDF:"/data/geospatial_08/ucfajlg/ERA5_meteo/UK/netcdf/UK.2019_04.nc":ssrd')
+    p = Path(loc) 
+    g = gdal.Open(f'NETCDF:"{loc}/netcdf/ERA5_Ghana.{year}_{month:02d}.nc":ssrd')
     geoT = g.GetGeoTransform()
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4326)
     srs = srs.ExportToWkt()
     
     nx, ny = g.RasterXSize, g.RasterYSize
-    for year in range(2000, 2021):
-        fnames = sorted([f for f in (p/"netcdf").glob(f"UK.{year}_??.nc")])   
+    for year in range(2000, dt.datetime.now().year + 1):
+        fnames = sorted([f for f in (p).glob(f"ERA5_Ghana.{year}_??.nc")])   
         ds=xr.concat([xr.open_dataset(f, chunks={}, mask_and_scale=True ) 
                     for f in fnames], 
                     "time") 
