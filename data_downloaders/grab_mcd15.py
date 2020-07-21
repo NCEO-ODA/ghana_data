@@ -21,8 +21,8 @@ def download_nasa(last_doy, year):
     password = "GeogG1222016"
 
     bothered = True
-    year, month, date = [int(x)
-                         for x in dt.datetime.strptime(f"{year}{doy}", 
+    year, month, day = [int(x)
+                         for x in dt.datetime.strptime(f"{year}{last_doy}", 
                                                        "%Y%j").strftime(
                                                        "%Y-%m-%d").split("-")]
 
@@ -35,7 +35,7 @@ def download_nasa(last_doy, year):
         "MOTA",
         product,
         tiles,
-        (PROCESS_LOCATION/"hdfs").as_posix,
+        (PROCESS_LOCATION/"hdfs").as_posix(),
         dt.datetime(year, month, day),
         n_threads=3,
     )
