@@ -72,8 +72,7 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
     # This is needed to keep getting the updated ERA5 datasets
     today = dt.datetime.now()
     delta_t = today - dt.datetime(year, month, 1)
-    if not output_nc_file.exists() and (
-                    0 <= delta_t.days <= 120 ):
+    if not output_nc_file.exists() and (0 <= delta_t.days <= 120):
 
         LOG.info(f"Downloading {year}-{month}")
         #'80/-50/-25/0', # North, West, South, East.
@@ -138,4 +137,3 @@ if __name__ == "__main__":
         for year in years:
             for month in months:
                 executor.submit(wrapper, month, year)
-    
