@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """Some remote data access routines to access the NCEO 
 data storage on JASMIN."""
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import datetime as dt
+
 
 import gdal
 import pandas as pd
@@ -44,19 +46,27 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
         variable in ERA5_VARIABLES
     ), f"{variable} not one of {ERA5_VARIABLES}"
     today = dt.datetime.now()
+
     arrays = []
-    for year in range(2002, today.year + 1):
+    print(dt.datetime.now())
+    def do_one_year(year):
         url = f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif"
         retval = gdal.Info(url, allMetadata=True, format="json")
         dates = [
             pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
         ]
-        ds = xr.open_rasterio(url, chunks={})
+        ds = xr.open_rasterio(url, chunks={"x":256, "y":256})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
-        arrays.append(ds)
+        return ds
 
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        years =[y for y in  range(2002, today.year + 1)]
+        futures = executor.map(do_one_year, years)
+        arrays = [future for future in futures]
+    print(dt.datetime.now())
     ds = xr.concat(arrays, dim="time")
+    print(dt.datetime.now())
     return ds
 
 
@@ -83,8 +93,8 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
         product in MODIS_VARIABLES
     ), f"{product} is not one of {MODIS_VARIABLES}"
     today = dt.datetime.now()
-    arrays = []
-    for year in range(2002, today.year + 1):
+
+    def do_one_year(year):
         url = f"/vsicurl/{remote_url}/MCD15/{product}_{year}.tif"
         retval = gdal.Info(url, allMetadata=True, format="json")
         dates = [
@@ -96,9 +106,16 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
         ds = xr.open_rasterio(url, chunks={})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
-        arrays.append(ds)
+        return ds
+ 
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        years =[y for y in  range(2002, today.year + 1)]
+        futures = executor.map(do_one_year, years)
+        arrays = [future for future in futures]
 
+    
     ds = xr.concat(arrays, dim="time")
+    
     return ds
 
 
