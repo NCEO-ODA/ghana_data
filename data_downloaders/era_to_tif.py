@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import logging
 import datetime as dt
-from pathlib import Path 
+from pathlib import Path
 
 
 import click
@@ -14,22 +14,28 @@ from config_file import CommandWithConfigFile
 
 LOG = logging
 
+
 def write_tif(arr, var, year, loc, geoT, srs):
     n_bands, ny, nx = arr.shape
-    fname_out = (loc/f"{var}_{year}.tif").as_posix()
+    fname_out = (loc / f"{var}_{year}.tif").as_posix()
     drv = gdal.GetDriverByName("GTiff")
-    ds = drv.Create(fname_out,
-                        nx, ny, n_bands, gdal.GDT_Float32,
-                        options=["COMPRESS=DEFLATE", "TILED=YES", 
-                                 "BIGTIFF=YES", "PREDICTOR=1"])
+    ds = drv.Create(
+        fname_out,
+        nx,
+        ny,
+        n_bands,
+        gdal.GDT_Float32,
+        options=["COMPRESS=DEFLATE", "TILED=YES", "BIGTIFF=YES", "PREDICTOR=1"],
+    )
     ds.SetGeoTransform(geoT)
     ds.SetProjection(srs)
     this_time = dt.date(year, 1, 1)
     delta = dt.timedelta(days=1)
     for band in range(n_bands):
-        data_band = ds.GetRasterBand(band+1)
-        data_band.SetMetadata({"DoY":f"{band+1}",
-                               "Date":this_time.strftime("%Y-%m-%d")})
+        data_band = ds.GetRasterBand(band + 1)
+        data_band.SetMetadata(
+            {"DoY": f"{band+1}", "Date": this_time.strftime("%Y-%m-%d")}
+        )
         data_band.WriteArray(arr[band, :, :])
         this_time += delta
     ds = None
@@ -39,7 +45,7 @@ def write_tif(arr, var, year, loc, geoT, srs):
 @click.command()
 @click.argument("loc")
 @click.argument("year")
-#@click.option("--config_file", type=click.Path())
+# @click.option("--config_file", type=click.Path())
 def to_sensible_format(loc, year):
     year = int(year)
     loc = Path(loc)
@@ -48,25 +54,23 @@ def to_sensible_format(loc, year):
 
     if not loc.exists():
         raise IOError(f"{loc} does not exist!")
-    g = gdal.Open(
-        f'NETCDF:"{loc.as_posix()}/netcdf/ERA5_Ghana.{year}_01.nc":ssrd')
+    g = gdal.Open(f'NETCDF:"{loc.as_posix()}/netcdf/ERA5_Ghana.{year}_01.nc":ssrd')
     geoT = g.GetGeoTransform()
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4326)
     srs = srs.ExportToWkt()
     nx, ny = g.RasterXSize, g.RasterYSize
-    
-    
-    fnames = sorted([f for f in (loc/"netcdf").glob(f"ERA5_Ghana.{year}_??.nc")])   
-    ds=xr.concat([xr.open_dataset(f, chunks={}, mask_and_scale=True ) 
-                for f in fnames], 
-                "time") 
+
+    fnames = sorted([f for f in (loc / "netcdf").glob(f"ERA5_Ghana.{year}_??.nc")])
+    ds = xr.concat(
+        [xr.open_dataset(f, chunks={}, mask_and_scale=True) for f in fnames], "time"
+    )
     if "expver" in ds.coords:
-        ds = ds.drop_sel({"expver":1}).squeeze()
-    ssrd = ds.ssrd.resample(time="1D").mean()/1000.
+        ds = ds.drop_sel({"expver": 1}).squeeze()
+    ssrd = ds.ssrd.resample(time="1D").mean() / 1000.0
     write_tif(ssrd.values, "ssrd", year, loc, geoT, srs)
-    tp = ds.tp.resample(time="1D").sum()*1000.
-    tp= xr.where(tp >= 0.001, tp, 0)
+    tp = ds.tp.resample(time="1D").sum() * 1000.0
+    tp = xr.where(tp >= 0.001, tp, 0)
     write_tif(tp.values, "precip", year, loc, geoT, srs)
     t2m = ds.t2m.resample(time="1D").mean() - 273.15
     write_tif(t2m.values, "t2m_mean", year, loc, geoT, srs)
@@ -80,11 +84,9 @@ def to_sensible_format(loc, year):
     write_tif(ea.values, "hum", year, loc, geoT, srs)
     u10 = ds.u10.resample(time="1D").mean()
     v10 = ds.v10.resample(time="1D").mean()
-    wspd = np.sqrt(u10**2 + v10**2)
+    wspd = np.sqrt(u10 ** 2 + v10 ** 2)
     write_tif(wspd.values, "wspd", year, loc, geoT, srs)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     to_sensible_format()
-
