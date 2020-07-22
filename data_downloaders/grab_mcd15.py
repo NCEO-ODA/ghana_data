@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 import datetime as dt
-
+import logging
 from pathlib import Path
 
 import gdal
 
 from modis_downloader import get_modis_data
-
-import logging
 
 GHANA_TILES = ["h17v07", "h18v07", "h17v08", "h18v08"]
 

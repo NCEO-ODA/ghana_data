@@ -2,29 +2,20 @@
 """Some convenience files to grab meteorological data and convert
 to CABO format to use within WOFOST. So far, using ERA5
 """
-import struct
+import datetime as dt
 import logging
-
-from pathlib import Path
+import struct
+from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-import datetime as dt
 from itertools import product
-
+from pathlib import Path
 from textwrap import dedent
 
-from collections import namedtuple
-
-from pathlib import Path
-
-import numpy as np
-
-from osgeo import gdal
-
-from netCDF4 import Dataset, date2index
-
 import cdsapi
-
+import numpy as np
+from netCDF4 import Dataset, date2index
+from osgeo import gdal
 
 ERAPARAMS = namedtuple(
     "ERAPARAMS", ["ssrd", "mx2t", "mn2t", "tp", "u10", "v10", "d2m"]

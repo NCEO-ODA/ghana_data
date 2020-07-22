@@ -5,10 +5,9 @@ See here: https://serge-m.github.io/click-config-parsers.html
 import click
 import yaml
 
+
 def CommandWithConfigFile(config_file_param_name):
-
     class CustomCommandClass(click.Command):
-
         def invoke(self, ctx):
             config_file = ctx.params[config_file_param_name]
             if config_file is not None:

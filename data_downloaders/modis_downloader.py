@@ -16,19 +16,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with modis_downloader.  If not, see <http://www.gnu.org/licenses/>.
+import datetime
+import logging
 import optparse
 import os
-import datetime
-import time
 import re
-
-import requests
-
-from pathlib import Path
+import time
 from concurrent import futures
 from functools import partial
+from pathlib import Path
 
-import logging
+import requests
 
 __author__ = "J Gomez-Dans"
 __copyright__ = "Copyright 2013-2019 J Gomez-Dans"
@@ -63,14 +61,16 @@ AUTHOR
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%s',
-                    )
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%s",
+)
 LOG = logging.getLogger(__name__)
 BASE_URL = "http://e4ftl01.cr.usgs.gov/"
 
 product_regex = r"M[CYO]D\d\dA.+?(?=.)\d\d\d"
+
 
 class WebError(RuntimeError):
     """An exception for web issues"""
@@ -109,7 +109,7 @@ def download_granule_list(url, tiles):
     """For a particular product and date, obtain the data granule URLs.
 
     """
-    
+
     if not isinstance(tiles, type([])):
         tiles = [tiles]
     while True:
@@ -217,7 +217,8 @@ def get_modis_data(
     """
     # Ensure the platform is OK
     assert platform.upper() in ["MOLA", "MOLT", "MOTA"], (
-        "%s is not a valid platform. Valid ones are MOLA, MOLT, MOTA" % platform
+        "%s is not a valid platform. Valid ones are MOLA, MOLT, MOTA"
+        % platform
     )
     # If output directory doesn't exist, create it
     LOG.debug(f"Creating output folder {output_dir:s}")
@@ -268,53 +269,110 @@ def get_modis_data(
                 password=password,
             )
 
-            with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
+            with futures.ThreadPoolExecutor(
+                max_workers=n_threads
+            ) as executor:
                 for fich in executor.map(download_granule_patch, gr):
                     dload_files.append(fich)
-        
+
         gotten_files = [Path(fich).name for fich in dload_files]
-        if all(fich in gotten_files  for fich in req_fnames):
+        if all(fich in gotten_files for fich in req_fnames):
             have_all_files = True
             LOG.info(f"{len(gotten_files):d} were successfully downloaded!")
         else:
-            raise IOError("Not all files were succesfully downloaded!\n" +
-                    "Try the command again to complete file downloading")
-        
+            raise IOError(
+                "Not all files were succesfully downloaded!\n"
+                + "Try the command again to complete file downloading"
+            )
+
     return dload_files
 
+
 def main():
-    parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(),
-                                   usage=HELP_TEXT)
-    parser.add_option('-u', '--username', action="store", dest="username",
-                      help="EarthData username")
-    parser.add_option('-P', '--password', action="store", dest="password",
-                      help="EarthData password")
-    parser.add_option('-v', '--verbose', action='store_true',
-                      default=False, help='verbose output')
-    parser.add_option('-p', '--product', action='store', dest="product",
-                      type=str,
-                      help="MODIS product name with collection tag at the end " +
-                           "(e.g. MOD09GA.005)")
-    parser.add_option('-t', '--tiles', action="store", dest="tiles",
-                      type=str, help="Required tiles (h17v04, for example" + 
-                      " or h17v04,h17v05 for several")
-    parser.add_option('-o', '--output', action="store", dest="dir_out",
-                      default=".", type=str, help="Output directory")
-    parser.add_option('-b', '--begin', action="store", dest="start_date",
-                      type=str, help="Start date (YYYY-MM-DD)")
-    parser.add_option('-e', '--end', action="store", dest="end_date",
-                      type=str, default=None, help="End date (YYYY-MM-DD)")
-    parser.add_option ('-x', '--xml', action="store_true", dest="get_xml",
-                     default=False,
-                     help="Get the XML metadata files too.")
+    parser = optparse.OptionParser(
+        formatter=optparse.TitledHelpFormatter(), usage=HELP_TEXT
+    )
+    parser.add_option(
+        "-u",
+        "--username",
+        action="store",
+        dest="username",
+        help="EarthData username",
+    )
+    parser.add_option(
+        "-P",
+        "--password",
+        action="store",
+        dest="password",
+        help="EarthData password",
+    )
+    parser.add_option(
+        "-v",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="verbose output",
+    )
+    parser.add_option(
+        "-p",
+        "--product",
+        action="store",
+        dest="product",
+        type=str,
+        help="MODIS product name with collection tag at the end "
+        + "(e.g. MOD09GA.005)",
+    )
+    parser.add_option(
+        "-t",
+        "--tiles",
+        action="store",
+        dest="tiles",
+        type=str,
+        help="Required tiles (h17v04, for example"
+        + " or h17v04,h17v05 for several",
+    )
+    parser.add_option(
+        "-o",
+        "--output",
+        action="store",
+        dest="dir_out",
+        default=".",
+        type=str,
+        help="Output directory",
+    )
+    parser.add_option(
+        "-b",
+        "--begin",
+        action="store",
+        dest="start_date",
+        type=str,
+        help="Start date (YYYY-MM-DD)",
+    )
+    parser.add_option(
+        "-e",
+        "--end",
+        action="store",
+        dest="end_date",
+        type=str,
+        default=None,
+        help="End date (YYYY-MM-DD)",
+    )
+    parser.add_option(
+        "-x",
+        "--xml",
+        action="store_true",
+        dest="get_xml",
+        default=False,
+        help="Get the XML metadata files too.",
+    )
     (options, args) = parser.parse_args()
     if options.verbose:
         LOG.setLevel(logging.DEBUG)
     else:
         LOG.setLevel(logging.INFO)
-    if 'username' not in options.__dict__:
+    if "username" not in options.__dict__:
         parser.error("You need to provide a username! Sgrunt!")
-    if 'password' not in options.__dict__:
+    if "password" not in options.__dict__:
         parser.error("You need to provide a password! Sgrunt!")
     product = options.product.upper()
     if re.match(product_regex, product) is None:
@@ -328,11 +386,13 @@ def main():
     else:
         raise ValueError(f"Your product name should be something")
     tiles = options.tiles.split(",")
-    start_date = datetime.datetime(*list(map(int,
-                                    options.start_date.split("-"))))
+    start_date = datetime.datetime(
+        *list(map(int, options.start_date.split("-")))
+    )
     if options.end_date is not None:
-        end_date =  datetime.datetime(*list(map(int,
-                                    options.end_date.split("-"))))
+        end_date = datetime.datetime(
+            *list(map(int, options.end_date.split("-")))
+        )
     LOG.info("MODIS downloader by J Gomez-Dans...")
     LOG.info("Starting downloading")
     dload_files = get_modis_data(
@@ -347,9 +407,12 @@ def main():
         n_threads=3,
     )
 
+
 if __name__ == "__main__":
     import datetime as dt
+
     from modis_downloader import get_modis_data
+
     username = "gomezdansj"
     password = "GeogG1222016"
 
@@ -370,4 +433,5 @@ if __name__ == "__main__":
             n_threads=3,
         )
     import logging
-    logging.getLogger().setLevel(logging.INFO) 
+
+    logging.getLogger().setLevel(logging.INFO)

@@ -1,17 +1,15 @@
 #!/usr/bin/env python
-import logging
 import datetime as dt
+import logging
 from pathlib import Path
-
 
 import click
 import gdal
+import numpy as np
 import osr
 import xarray as xr
-import numpy as np
 
 from config_file import CommandWithConfigFile
-
 
 gdal.UseExceptions()
 
@@ -38,7 +36,12 @@ def write_tif(arr, var, year, loc, geoT, srs):
         ny,
         n_bands,
         gdal.GDT_Float32,
-        options=["COMPRESS=DEFLATE", "TILED=YES", "BIGTIFF=YES", "PREDICTOR=1"],
+        options=[
+            "COMPRESS=DEFLATE",
+            "TILED=YES",
+            "BIGTIFF=YES",
+            "PREDICTOR=1",
+        ],
     )
     ds.SetGeoTransform(geoT)
     ds.SetProjection(srs)
@@ -65,16 +68,21 @@ def to_sensible_format(loc, year):
     LOG.info(f"Doing {year} on {loc.as_posix()}")
     if not loc.exists():
         raise IOError(f"{loc} does not exist!")
-    g = gdal.Open(f'NETCDF:"{loc.as_posix()}/netcdf/ERA5_Ghana.{year}_01.nc":ssrd')
+    g = gdal.Open(
+        f'NETCDF:"{loc.as_posix()}/netcdf/ERA5_Ghana.{year}_01.nc":ssrd'
+    )
     geoT = g.GetGeoTransform()
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4326)
     srs = srs.ExportToWkt()
     nx, ny = g.RasterXSize, g.RasterYSize
 
-    fnames = sorted([f for f in (loc / "netcdf").glob(f"ERA5_Ghana.{year}_??.nc")])
+    fnames = sorted(
+        [f for f in (loc / "netcdf").glob(f"ERA5_Ghana.{year}_??.nc")]
+    )
     ds = xr.concat(
-        [xr.open_dataset(f, chunks={}, mask_and_scale=True) for f in fnames], "time"
+        [xr.open_dataset(f, chunks={}, mask_and_scale=True) for f in fnames],
+        "time",
     )
     if "expver" in ds.coords:
         LOG.info("ERA5RT data. Expunging one dimension, hope it works")
