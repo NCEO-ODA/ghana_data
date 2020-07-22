@@ -102,7 +102,9 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
     return ds
 
 
-def calculate_climatology(ds, first_year=2002, period="time.month", last_year=None):
+def calculate_climatology(
+    ds, first_year=2002, period="time.month", last_year=None
+):
     """A simple function to calculate the mean and standard deviation for
     every `period` (e.g. month or whatever) on a pixel by pixel basis.
     The function allows you to specify a `first_year` and `last_year` for the
