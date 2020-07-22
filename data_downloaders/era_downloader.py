@@ -138,4 +138,4 @@ if __name__ == "__main__":
         for year in years:
             for month in months:
                 executor.submit(wrapper, month, year)
-    print(executor.result())
+    
