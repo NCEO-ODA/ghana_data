@@ -1,0 +1,27 @@
+name: nceo_oda
+channels:
+ - conda-forge
+ - defaults
+dependencies:
+ - python>=3.7
+ - numpy
+ - requests
+ - pandas
+ - xarray
+ - gdal
+ - libgdal
+ - netcdf4
+ - h5py 
+ - hdf5
+ - scipy
+ - matplotlib
+ - seaborn
+ - cartopy
+ - pytest
+ - dask
+ - statsmodels
+ - pyyaml
+ - pip
+ - click
+ - pip:
+  - cdsapi
