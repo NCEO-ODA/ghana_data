@@ -14,5 +14,5 @@ jobs:
         use-flake8: false 
         use-black: true
         use-mypy: false
-        use-isort: true
+        use-isort: false
         extra-black-options: "-l 78"
