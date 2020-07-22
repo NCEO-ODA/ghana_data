@@ -1,12 +1,18 @@
 #!/usr/bin/env python
+import logging
 import datetime as dt
 from pathlib import Path 
 
+
+import click
 import gdal
 import osr
 import xarray as xr
 import numpy as np
 
+from config_file import CommandWithConfigFile
+
+LOG = logging
 
 def write_tif(arr, var, year, loc, geoT, srs):
     n_bands, ny, nx = arr.shape
@@ -29,39 +35,56 @@ def write_tif(arr, var, year, loc, geoT, srs):
     ds = None
     print(f"{fname_out} saved")
 
-    
-def to_sensible_format(loc, year, month, ):
 
-    p = Path(loc) 
-    g = gdal.Open(f'NETCDF:"{loc}/netcdf/ERA5_Ghana.{year}_{month:02d}.nc":ssrd')
+@click.command()
+@click.argument("loc")
+@click.argument("year")
+#@click.option("--config_file", type=click.Path())
+def to_sensible_format(loc, year):
+    year = int(year)
+    loc = Path(loc)
+    print(loc)
+    print(year)
+
+    if not loc.exists():
+        raise IOError(f"{loc} does not exist!")
+    g = gdal.Open(
+        f'NETCDF:"{loc.as_posix()}/netcdf/ERA5_Ghana.{year}_01.nc":ssrd')
     geoT = g.GetGeoTransform()
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4326)
     srs = srs.ExportToWkt()
-    
     nx, ny = g.RasterXSize, g.RasterYSize
-    for year in range(2000, dt.datetime.now().year + 1):
-        fnames = sorted([f for f in (p).glob(f"ERA5_Ghana.{year}_??.nc")])   
-        ds=xr.concat([xr.open_dataset(f, chunks={}, mask_and_scale=True ) 
-                    for f in fnames], 
-                    "time") 
-        ssrd = ds.ssrd.resample(time="1D").mean()/1000.
-        write_tif(ssrd.values, "ssrd", year, p, geoT, srs)
-        tp = ds.tp.resample(time="1D").sum()*1000.
-        tp= xr.where(tp >= 0.001, tp, 0)
-        write_tif(tp.values, "precip", year, p, geoT, srs)
-        t2m = ds.t2m.resample(time="1D").mean() - 273.15
-        write_tif(t2m.values, "t2m_mean", year, p, geoT, srs)
-        t2m = ds.t2m.resample(time="1D").min() - 273.15
-        write_tif(t2m.values, "t2m_min", year, p, geoT, srs)
-        t2m = ds.t2m.resample(time="1D").max() - 273.15
-        write_tif(t2m.values, "t2m_max", year, p, geoT, srs)
-        tdew = ds.d2m.resample(time="1D").mean() - 273.15
-        tmp = (17.27 * tdew) / (tdew + 237.3)
-        ea = 0.6108 * np.exp(tmp)
-        write_tif(ea.values, "hum", year, p, geoT, srs)
-        u10 = ds.u10.resample(time="1D").mean()
-        v10 = ds.v10.resample(time="1D").mean()
-        wspd = np.sqrt(u10**2 + v10**2)
-        write_tif(wspd.values, "wspd", year, p, geoT, srs)
+    
+    
+    fnames = sorted([f for f in (loc/"netcdf").glob(f"ERA5_Ghana.{year}_??.nc")])   
+    ds=xr.concat([xr.open_dataset(f, chunks={}, mask_and_scale=True ) 
+                for f in fnames], 
+                "time") 
+    if "expver" in ds.coords:
+        ds = ds.drop_sel({"expver":1}).squeeze()
+    ssrd = ds.ssrd.resample(time="1D").mean()/1000.
+    write_tif(ssrd.values, "ssrd", year, loc, geoT, srs)
+    tp = ds.tp.resample(time="1D").sum()*1000.
+    tp= xr.where(tp >= 0.001, tp, 0)
+    write_tif(tp.values, "precip", year, loc, geoT, srs)
+    t2m = ds.t2m.resample(time="1D").mean() - 273.15
+    write_tif(t2m.values, "t2m_mean", year, loc, geoT, srs)
+    t2m = ds.t2m.resample(time="1D").min() - 273.15
+    write_tif(t2m.values, "t2m_min", year, loc, geoT, srs)
+    t2m = ds.t2m.resample(time="1D").max() - 273.15
+    write_tif(t2m.values, "t2m_max", year, loc, geoT, srs)
+    tdew = ds.d2m.resample(time="1D").mean() - 273.15
+    tmp = (17.27 * tdew) / (tdew + 237.3)
+    ea = 0.6108 * np.exp(tmp)
+    write_tif(ea.values, "hum", year, loc, geoT, srs)
+    u10 = ds.u10.resample(time="1D").mean()
+    v10 = ds.v10.resample(time="1D").mean()
+    wspd = np.sqrt(u10**2 + v10**2)
+    write_tif(wspd.values, "wspd", year, loc, geoT, srs)
+
+
+
+if __name__ == '__main__':
+    to_sensible_format()
 
