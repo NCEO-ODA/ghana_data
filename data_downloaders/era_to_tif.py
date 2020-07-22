@@ -12,7 +12,17 @@ import numpy as np
 
 from config_file import CommandWithConfigFile
 
-LOG = logging
+LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.DEBUG)
+if not LOG.handlers:
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - " + "%(levelname)s - %(message)s"
+    )
+    ch.setFormatter(formatter)
+    LOG.addHandler(ch)
+LOG.propagate = False
 
 
 def write_tif(arr, var, year, loc, geoT, srs):
@@ -39,7 +49,7 @@ def write_tif(arr, var, year, loc, geoT, srs):
         data_band.WriteArray(arr[band, :, :])
         this_time += delta
     ds = None
-    print(f"{fname_out} saved")
+    LOG.info(f"{fname_out} saved")
 
 
 @click.command()
@@ -49,9 +59,7 @@ def write_tif(arr, var, year, loc, geoT, srs):
 def to_sensible_format(loc, year):
     year = int(year)
     loc = Path(loc)
-    print(loc)
-    print(year)
-
+    LOG.info(f"Doing {year} on {loc.as_posix()}")
     if not loc.exists():
         raise IOError(f"{loc} does not exist!")
     g = gdal.Open(f'NETCDF:"{loc.as_posix()}/netcdf/ERA5_Ghana.{year}_01.nc":ssrd')
@@ -66,6 +74,7 @@ def to_sensible_format(loc, year):
         [xr.open_dataset(f, chunks={}, mask_and_scale=True) for f in fnames], "time"
     )
     if "expver" in ds.coords:
+        LOG.info("ERA5RT data. Expunging one dimension, hope it works")
         ds = ds.drop_sel({"expver": 1}).squeeze()
     ssrd = ds.ssrd.resample(time="1D").mean() / 1000.0
     write_tif(ssrd.values, "ssrd", year, loc, geoT, srs)
@@ -86,6 +95,7 @@ def to_sensible_format(loc, year):
     v10 = ds.v10.resample(time="1D").mean()
     wspd = np.sqrt(u10 ** 2 + v10 ** 2)
     write_tif(wspd.values, "wspd", year, loc, geoT, srs)
+    LOG.info("Successfully done!")
 
 
 if __name__ == "__main__":
