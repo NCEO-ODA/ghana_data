@@ -24,4 +24,4 @@ dependencies:
  - pip
  - click
  - pip:
-  - cdsapi
+   - cdsapi
