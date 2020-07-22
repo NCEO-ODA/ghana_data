@@ -12,6 +12,9 @@ import numpy as np
 
 from config_file import CommandWithConfigFile
 
+
+gdal.UseExceptions()
+
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 if not LOG.handlers:
