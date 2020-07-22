@@ -23,5 +23,6 @@ dependencies:
  - pyyaml
  - pip
  - click
+ - rasterio
  - pip:
    - cdsapi
