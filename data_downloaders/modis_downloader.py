@@ -269,9 +269,7 @@ def get_modis_data(
                 password=password,
             )
 
-            with futures.ThreadPoolExecutor(
-                max_workers=n_threads
-            ) as executor:
+            with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
                 for fich in executor.map(download_granule_patch, gr):
                     dload_files.append(fich)
 

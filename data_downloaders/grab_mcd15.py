@@ -30,7 +30,6 @@ def download_nasa(last_doy, year):
     username = "gomezdansj"
     password = "GeogG1222016"
 
-    bothered = True
     year, month, day = [
         int(x)
         for x in dt.datetime.strptime(f"{year}{last_doy}", "%Y%j")

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import shutil
-import sys
 from pathlib import Path
 
 import gdal
@@ -23,9 +22,9 @@ def mosaic_dates_wgs84_country(
     fmt="MEM",
 ):
     """Searches for all files in folder `folder` of a given MODIS product for
-    the selected year and day of year, and mosaics them together, clipping by some
-    shapefile. Returns the actual raster data, as well as the corner coordinates in 
-    WGS-84 projection.
+    the selected year and day of year, and mosaics them together, clipping
+    by some shapefile. Returns the actual raster data, as well as the corner
+    coordinates in WGS-84 projection.
     """
     folder = Path(folder)
     files = [
@@ -40,7 +39,8 @@ def mosaic_dates_wgs84_country(
             dstSRS=srs,
             xRes=500,
             yRes=500,
-            cutlineDSName="/gws/nopw/j04/odanceo/public/MCD15/ne_50m_admin_0_countries.shp",
+            cutlineDSName="/gws/nopw/j04/odanceo"
+            + "/public/MCD15/ne_50m_admin_0_countries.shp",
             cutlineWhere=f"NAME='{country:s}'",
             cropToCutline=True,
             creationOptions=[
@@ -50,7 +50,7 @@ def mosaic_dates_wgs84_country(
                 "COPY_SRC_OVERVIEWS=YES",
             ],
         )
-        g = None
+        del g
         return folder / f"{layer:s}.A{year:04d}{doy:03d}.tif"
     else:
         return None

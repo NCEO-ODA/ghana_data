@@ -9,8 +9,6 @@ import numpy as np
 import osr
 import xarray as xr
 
-from config_file import CommandWithConfigFile
-
 gdal.UseExceptions()
 
 LOG = logging.getLogger(__name__)
@@ -75,7 +73,7 @@ def to_sensible_format(loc, year):
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4326)
     srs = srs.ExportToWkt()
-    nx, ny = g.RasterXSize, g.RasterYSize
+    # nx, ny = g.RasterXSize, g.RasterYSize
 
     fnames = sorted(
         [f for f in (loc / "netcdf").glob(f"ERA5_Ghana.{year}_??.nc")]
