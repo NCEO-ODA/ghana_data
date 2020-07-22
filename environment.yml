@@ -24,5 +24,6 @@ dependencies:
  - pip
  - click
  - rasterio
+ - tqdm
  - pip:
    - cdsapi

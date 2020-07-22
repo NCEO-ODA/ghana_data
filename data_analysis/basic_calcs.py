@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """Some remote data access routines to access the NCEO 
 data storage on JASMIN."""
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import datetime as dt
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import gdal
 import pandas as pd
 import xarray as xr
+from tqdm.auto import tqdm
 
 JASMIN_URL = "http://gws-access.ceda.ac.uk/public/odanceo/"
 
@@ -48,7 +48,6 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
     today = dt.datetime.now()
 
     arrays = []
-    print(dt.datetime.now())
     def do_one_year(year):
         url = f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif"
         retval = gdal.Info(url, allMetadata=True, format="json")
@@ -62,11 +61,10 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
 
     with ThreadPoolExecutor(max_workers=8) as executor:
         years =[y for y in  range(2002, today.year + 1)]
-        futures = executor.map(do_one_year, years)
-        arrays = [future for future in futures]
-    print(dt.datetime.now())
+        arrays = list(tqdm(executor.map(do_one_year, years),
+                            total=len(years)))
+        
     ds = xr.concat(arrays, dim="time")
-    print(dt.datetime.now())
     return ds
 
 
@@ -110,9 +108,8 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
  
     with ThreadPoolExecutor(max_workers=8) as executor:
         years =[y for y in  range(2002, today.year + 1)]
-        futures = executor.map(do_one_year, years)
-        arrays = [future for future in futures]
-
+        arrays = list(tqdm(executor.map(do_one_year, years),
+                            total=len(years)))
     
     ds = xr.concat(arrays, dim="time")
     
