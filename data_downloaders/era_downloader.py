@@ -105,8 +105,8 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
 if __name__ == "__main__":
     # (-3.262065, 4.738830) - (1.200134, 11.165904)
     # Ghana extent
-    mylat = [1, 12]
-    mylon = [-3, 5]
+    mylat = [4, 14]
+    mylon = [-3.5, 1.25]
     output_folder = "/gws/nopw/j04/odanceo/public/ERA5_meteo/netcdf/"
     wrapper = partial(
         grab_era5,
