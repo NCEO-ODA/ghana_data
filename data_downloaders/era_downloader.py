@@ -58,7 +58,8 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
     # This is needed to keep getting the updated ERA5 datasets
     today = dt.datetime.now()
     delta_t = today - dt.datetime(year, month, 1)
-    if not output_nc_file.exists() and (0 <= delta_t.days <= 120):
+
+    if not output_nc_file.exists() or (0 <= delta_t.days <= 120):
 
         LOG.info(f"Downloading {year}-{month}")
         #'80/-50/-25/0', # North, West, South, East.
@@ -66,7 +67,7 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
             f"{int(mylat[0]):d}/{int(mylon[0]):d}/"
             + f"{int(mylat[1]):d}/{int(mylon[1]):d}"
         )
-        # [60, -10, 50, 2], # North, West, South, East
+
         c = cdsapi.Client()
         c.retrieve(
             "reanalysis-era5-single-levels",
