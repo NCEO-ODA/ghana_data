@@ -48,22 +48,24 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
     today = dt.datetime.now()
 
     arrays = []
+
     def do_one_year(year):
         url = f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif"
         retval = gdal.Info(url, allMetadata=True, format="json")
         dates = [
             pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
         ]
-        ds = xr.open_rasterio(url, chunks={"x":256, "y":256})
+        ds = xr.open_rasterio(url, chunks={"x": 256, "y": 256})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
         return ds
 
     with ThreadPoolExecutor(max_workers=8) as executor:
-        years =[y for y in  range(2002, today.year + 1)]
-        arrays = list(tqdm(executor.map(do_one_year, years),
-                            total=len(years)))
-        
+        years = [y for y in range(2002, today.year + 1)]
+        arrays = list(
+            tqdm(executor.map(do_one_year, years), total=len(years))
+        )
+
     ds = xr.concat(arrays, dim="time")
     return ds
 
@@ -105,14 +107,15 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
         return ds
- 
+
     with ThreadPoolExecutor(max_workers=8) as executor:
-        years =[y for y in  range(2002, today.year + 1)]
-        arrays = list(tqdm(executor.map(do_one_year, years),
-                            total=len(years)))
-    
+        years = [y for y in range(2002, today.year + 1)]
+        arrays = list(
+            tqdm(executor.map(do_one_year, years), total=len(years))
+        )
+
     ds = xr.concat(arrays, dim="time")
-    
+
     return ds
 
 
