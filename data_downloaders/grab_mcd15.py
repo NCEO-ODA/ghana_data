@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 import datetime as dt
 import logging
+import os
 from pathlib import Path
 
 import gdal
 
 from modis_downloader import get_modis_data
+
+MODIS_USERNAME = os.environ["MODIS_USERNAME"]
+MODIS_PASSWORD = os.environt["MODIS_PASSWORD"]
 
 GHANA_TILES = ["h17v07", "h18v07", "h17v08", "h18v08"]
 
@@ -27,8 +31,8 @@ LOG.propagate = False
 
 
 def download_nasa(last_doy, year):
-    username = "gomezdansj"
-    password = "GeogG1222016"
+    username = MODIS_USERNAME
+    password = MODIS_PASSWORD
 
     year, month, day = [
         int(x)
