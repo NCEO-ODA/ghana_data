@@ -11,3 +11,7 @@ Basically, you just need [to follow the instructions](https://cds.climate.copern
 ### MODIS Downloading
 
 For this, you need to create an [EarthData Login account](https://urs.earthdata.nasa.gov/users/new). Once you have this, you probably want to try to download a product with that account to activate it. You can do this by just clicking on this **link** and downloading it.
+
+## Downloading the data itself
+
+Once you have set-up the accounts above, you can easily download the data using command line tools, or developing your own codes
