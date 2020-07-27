@@ -6,12 +6,20 @@ from pathlib import Path
 
 import gdal
 
+import click
+
 from modis_downloader import get_modis_data
 
 from to_tif import do_tifs
 
-MODIS_USERNAME = os.environ["MODIS_USERNAME"]
-MODIS_PASSWORD = os.environ["MODIS_PASSWORD"]
+try:
+    MODIS_USERNAME = os.environ["MODIS_USERNAME"]
+except KeyError:
+    MODIS_USERNAME = ""
+try:
+    MODIS_PASSWORD = os.environ["MODIS_PASSWORD"]
+except KeyError:
+    MODIS_PASSWORD = ""
 
 TILES = ["h17v07", "h18v07", "h17v08", "h18v08"]
 
@@ -93,7 +101,24 @@ def scan_current_files(data_loc, curr_year):
         return last_time
 
 
-if __name__ == "__main__":
+@click.command()
+@click.option('--location', default=PROCESS_LOCATION,
+             help='Where will MODIS data be saved to')
+@click.option('--product', default="MCD15A2H",
+             help='MODIS product name')
+@click.option('--layers', default="Lai_500m,Fpar_500m,FparLai_QC",
+             help='Product layers, comma separated')
+@click.option('--username', default=MODIS_USERNAME,
+            help="MODIS username")
+@click.option('--password', default=MODIS_PASSWORD,
+            help="MODIS password")
+def main(location, product, layers, username, password):
+    import pdb;pdb.set_trace()
+    if username == "":
+        raise ValueError("No NASA username set!")
+    if password == "":
+        raise ValueError("No NASA username set!")
+    layers = layers.split(",")
     today = dt.datetime.now()
     LOG.info(f"Started running. Current DoY {today.strftime('%Y-%j')}")
     current_year = today.year
@@ -107,6 +132,9 @@ if __name__ == "__main__":
     # Scan local files to see what's the latest we've processed
     last_time = scan_current_files(PROCESS_LOCATION, current_year)
     do_tifs(current_year, last_time, folder=PROCESS_LOCATION,
-            product="MCD15A2H",
-            layers=["Lai_500m", "Fpar_500m", "FparLai_QC"]
+            product=product,
+            layers=layers
             )
+
+if __name__ == "__main__":
+    main()
