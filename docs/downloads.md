@@ -34,7 +34,7 @@ The ERA5 data is the new generation ECMWF reanalysis product. As a reanalysis pr
 
 (other variables can be selected by changing the code).Once the the CDS API account has been created, you can just use the simple script `data_downloaders/era_downloader.py`. The instructions are basically
 
-```bash
+```sh
 Usage
 =====
   
@@ -67,13 +67,13 @@ Options
 
 The script will download all the data available since 2000, but will check for existing files and will only download new data. So, to download data for Ghana (extent from -4 to 5 degrees longitude, 1 to 12 degrees latitude), we may use
 
-```bash
+```sh
     python ./era_downloader.py -v d era5_download/ -r Ghana -y 1,12 -x -4,5
 ```
 
 Since this is likely to take a while, you may want to use nohup and log the output to a file:
 
-```bash
+```sh
     nohup python ./era_downloader.py -v d era5_download/ -r Ghana -y 1,12 -x -4,5 &>era_dload.log&
 ```
 
@@ -81,6 +81,6 @@ This downloads all the files (with names like `ERA5_Ghana.2002_12.nc`, where `Gh
 
 The files contain *hourly* data at the native resolution for the variables listed above. We usually require *daily data*, and we move to GeoTIFF format (a more network friendly data format), by using the `data_downloader/era_to_tif.py` script. This script basically reuses the location from the previous one (`era5_download`) and works on an annual basis:
 
-```bash
+```sh
 python ./era_to_tif.py era5_download 2004
 ```

@@ -11,6 +11,7 @@ Satellite monitoring for Ghana
    :caption: Contents:
 
    introduction
+   downloads.md
 
 Indices and tables
 ==================
