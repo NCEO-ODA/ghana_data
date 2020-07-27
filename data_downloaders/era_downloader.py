@@ -165,7 +165,7 @@ def main():
         "-x",
         "--lon",
         action="store",
-        default="-3,5",
+        default="-4,5",
         type=str,
         help="Minimum/maximum longitude in decimal degrees.",
     )
