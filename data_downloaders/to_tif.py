@@ -21,14 +21,17 @@ if not LOG.handlers:
     LOG.addHandler(ch)
 LOG.propagate = False
 
-def download_unzip_file(folder,
-                        url = "https://www.naturalearthdata.com/" +
-              "http//www.naturalearthdata.com/download/50m/" +
-              "cultural/ne_50m_admin_0_countries.zip"):
+
+def download_unzip_file(
+    folder,
+    url="https://www.naturalearthdata.com/"
+    + "http//www.naturalearthdata.com/download/50m/"
+    + "cultural/ne_50m_admin_0_countries.zip",
+):
     resp = urlopen(url)
     zipper = zipfile.ZipFile(BytesIO(resp.read()))
     zipper.extractall(path=folder)
-    
+
 
 def get_sfc_qc(qa_data, mask57=0b11100000):
     sfc_qa = np.right_shift(np.bitwise_and(qa_data, mask57), 5)
@@ -51,7 +54,7 @@ def mosaic_dates_wgs84_country(
     coordinates in WGS-84 projection.
     """
     folder = Path(folder)
-    cutline = folder/"ne_50m_admin_0_countries.shp"
+    cutline = folder / "ne_50m_admin_0_countries.shp"
     if not cutline.exists():
         LOG.info("No cutline shapefile. Downloading!")
         download_unzip_file(folder)
@@ -68,7 +71,9 @@ def mosaic_dates_wgs84_country(
             dstSRS=srs,
             xRes=500,
             yRes=500,
-            cutlineDSName=(folder/"ne_50m_admin_0_countries.shp").as_posix(),
+            cutlineDSName=(
+                folder / "ne_50m_admin_0_countries.shp"
+            ).as_posix(),
             cutlineWhere=f"NAME='{country:s}'",
             cropToCutline=True,
             creationOptions=[
@@ -84,11 +89,14 @@ def mosaic_dates_wgs84_country(
         return None
 
 
-def do_tifs(year, max_doy, 
-            folder="/gws/nopw/j04/odanceo/public/MCD15",
-            product="MCD15A2H",
-            layers=["Lai_500m", "Fpar_500m", "FparLai_QC"]):
-    
+def do_tifs(
+    year,
+    max_doy,
+    folder="/gws/nopw/j04/odanceo/public/MCD15",
+    product="MCD15A2H",
+    layers=["Lai_500m", "Fpar_500m", "FparLai_QC"],
+):
+
     folder = Path(folder)
     LOG.info(f"Creating TIFFs in {folder}")
     hdf_folder = folder / "hdfs"

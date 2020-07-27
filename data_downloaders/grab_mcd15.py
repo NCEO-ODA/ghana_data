@@ -100,18 +100,23 @@ def scan_current_files(data_loc, curr_year):
 
 
 @click.command()
-@click.option('--location', default=PROCESS_LOCATION,
-             help='Where will MODIS data be saved to')
-@click.option('--product', default="MCD15A2H",
-             help='MODIS product name')
-@click.option('--layers', default="Lai_500m,Fpar_500m,FparLai_QC",
-             help='Product layers, comma separated')
-@click.option('--username', default=MODIS_USERNAME,
-            help="MODIS username")
-@click.option('--password', default=MODIS_PASSWORD,
-            help="MODIS password")
+@click.option(
+    "--location",
+    default=PROCESS_LOCATION,
+    help="Where will MODIS data be saved to",
+)
+@click.option("--product", default="MCD15A2H", help="MODIS product name")
+@click.option(
+    "--layers",
+    default="Lai_500m,Fpar_500m,FparLai_QC",
+    help="Product layers, comma separated",
+)
+@click.option("--username", default=MODIS_USERNAME, help="MODIS username")
+@click.option("--password", default=MODIS_PASSWORD, help="MODIS password")
 def main(location, product, layers, username, password):
-    import pdb;pdb.set_trace()
+    import pdb
+
+    pdb.set_trace()
     if username == "":
         raise ValueError("No NASA username set!")
     if password == "":
@@ -129,10 +134,14 @@ def main(location, product, layers, username, password):
         download_nasa(last_time, current_year)
     # Scan local files to see what's the latest we've processed
     last_time = scan_current_files(PROCESS_LOCATION, current_year)
-    do_tifs(current_year, last_time, folder=PROCESS_LOCATION,
-            product=product,
-            layers=layers
-            )
+    do_tifs(
+        current_year,
+        last_time,
+        folder=PROCESS_LOCATION,
+        product=product,
+        layers=layers,
+    )
+
 
 if __name__ == "__main__":
     main()

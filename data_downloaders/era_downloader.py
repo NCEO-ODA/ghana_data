@@ -177,10 +177,10 @@ def main():
 
     lats = [float(x) for x in options.lat.split(",")]
     lons = [float(x) for x in options.lon.split(",")]
-    min_lat = min(lats) # south
-    max_lat = max(lats) # north
-    min_lon = min(lons) # west 
-    max_lon = max(lons) # east
+    min_lat = min(lats)  # south
+    max_lat = max(lats)  # north
+    min_lon = min(lons)  # west
+    max_lon = max(lons)  # east
     start_era_download(
         options.region,
         options.output_folder,
