@@ -8,6 +8,8 @@ import gdal
 
 from modis_downloader import get_modis_data
 
+from to_tif import do_tifs
+
 MODIS_USERNAME = os.environ["MODIS_USERNAME"]
 MODIS_PASSWORD = os.environ["MODIS_PASSWORD"]
 
@@ -102,3 +104,9 @@ if __name__ == "__main__":
     LOG.info(f"Last DoY: {last_time}")
     if dt.datetime.strptime(f"{current_year}/{last_time}", "%Y/%j") <= today:
         download_nasa(last_time, current_year)
+    # Scan local files to see what's the latest we've processed
+    last_time = scan_current_files(PROCESS_LOCATION, current_year)
+    do_tifs(current_year, last_time, folder=PROCESS_LOCATION,
+            product="MCD15A2H",
+            layers=["Lai_500m", "Fpar_500m", "FparLai_QC"]
+            )
