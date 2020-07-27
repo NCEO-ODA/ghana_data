@@ -34,7 +34,7 @@ The ERA5 data is the new generation ECMWF reanalysis product. As a reanalysis pr
 
 (other variables can be selected by changing the code).Once the the CDS API account has been created, you can just use the simple script `data_downloaders/era_downloader.py`. The instructions are basically
 
-```sh
+```bash
 Usage
 =====
   
@@ -67,13 +67,13 @@ Options
 
 The script will download all the data available since 2000, but will check for existing files and will only download new data. So, to download data for Ghana (extent from -4 to 5 degrees longitude, 1 to 12 degrees latitude), we may use
 
-```sh
+```bash
     python ./era_downloader.py -v d era5_download/ -r Ghana -y 1,12 -x -4,5
 ```
 
 Since this is likely to take a while, you may want to use nohup and log the output to a file:
 
-```sh
+```bash
     nohup python ./era_downloader.py -v d era5_download/ -r Ghana -y 1,12 -x -4,5 &>era_dload.log&
 ```
 
@@ -81,6 +81,33 @@ This downloads all the files (with names like `ERA5_Ghana.2002_12.nc`, where `Gh
 
 The files contain *hourly* data at the native resolution for the variables listed above. We usually require *daily data*, and we move to GeoTIFF format (a more network friendly data format), by using the `data_downloader/era_to_tif.py` script. This script basically reuses the location from the previous one (`era5_download`) and works on an annual basis:
 
-```sh
+```bash
 python ./era_to_tif.py era5_download 2004
 ```
+
+## Downloading MODIS data
+
+Downloading MODIS data is accomplished by the `data_downloaders.py/grab_mcd15.py` script. As with the meteo scripts, this new script will download the data & collate it into something sensible. The script is used as follows:
+
+```bash
+$ python ./grab_mcd15.py --help
+Usage: grab_mcd15.py [OPTIONS]
+
+Options:
+  --location TEXT  Where will MODIS data be saved to
+  --product TEXT   MODIS product name
+  --layers TEXT    Product layers, comma separated
+  --username TEXT  MODIS username
+  --password TEXT  MODIS password
+  --help           Show this message and exit.
+
+```
+
+Basically, you can choose:
+
+1. The MODIS product (e.g. `MCD15A2H` for the MODIS LAI product).
+2. The *layers* of said MODIS product (each MODIS file contains a number of individual raster dataset called *layers*). For the `MCD15A2H` product, these are e.g. `Lai_500m,Fpar_500m,FparLai_QC`. You can set a folder where the data will be downloaded (in a folder called `hdfs` off the main folder) and where the output geotiffs will be saved to.
+
+You can also specify a MODIS username and password in the command line but it's often better to set them up as environmental variables in the shell. The script will look for `MODIS_USERNAME` and `MODIS_PASSWORD`.
+
+The script can be called repeatedly without changing the parameters and will carry on downloading and appending data to the GeoTIFF files.
