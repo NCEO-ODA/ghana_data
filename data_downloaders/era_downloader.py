@@ -7,10 +7,13 @@ import logging
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+import optparse
 from pathlib import Path
 
 import cdsapi
 import numpy as np
+
+JASMIN_ERA5 = "/gws/nopw/j04/odanceo/public/ERA5_meteo/"
 
 ERAPARAMS = namedtuple(
     "ERAPARAMS", ["ssrd", "mx2t", "mn2t", "tp", "u10", "v10", "d2m"]
@@ -26,6 +29,22 @@ if not LOG.handlers:
     ch.setFormatter(formatter)
     LOG.addHandler(ch)
 LOG.propagate = False
+
+HELP_TEXT = """
+SYNOPSIS
+./era_downloader.py 
+DESCRIPTION
+A program to download Copernicus data.
+EXAMPLES
+./era_downloader.py  -v \
+          
+
+EXIT STATUS
+    No exit status yet, can't be bothered.
+AUTHOR
+    J Gomez-Dans <j.gomez-dans@ucl.ac.uk>
+    See also https://github.com/NCEO-ODA/ghana_data
+"""
 
 
 def grab_era5(month, year, output_folder, region, mylat, mylon):
@@ -52,21 +71,24 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
     mylon : float
         West and East Longitudes in decimal degrees.
     """
+
+    output_folder = Path(output_folder) / "netcdf"
+    output_folder.mkdir(parents=True, exist_ok=True)
     output_nc_file = (
-        Path(output_folder) / f"ERA5_{region:s}.{year:d}_{month:02d}.nc"
+        output_folder / f"ERA5_{region:s}.{year:d}_{month:02d}.nc"
     )
     # This is needed to keep getting the updated ERA5 datasets
     today = dt.datetime.now()
     delta_t = today - dt.datetime(year, month, 1)
-    if not output_nc_file.exists() and (0 <= delta_t.days <= 120):
+
+    if not output_nc_file.exists() or (0 <= delta_t.days <= 120):
 
         LOG.info(f"Downloading {year}-{month}")
         #'80/-50/-25/0', # North, West, South, East.
         area = (
-            f"{int(mylat[0]):d}/{int(mylon[0]):d}/"
-            + f"{int(mylat[1]):d}/{int(mylon[1]):d}"
+            f"{int(mylat[1]):d}/{int(mylon[0]):d}/"
+            + f"{int(mylat[0]):d}/{int(mylon[1]):d}"
         )
-        # [60, -10, 50, 2], # North, West, South, East
         c = cdsapi.Client()
         c.retrieve(
             "reanalysis-era5-single-levels",
@@ -98,28 +120,101 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
         )
         return output_nc_file.as_posix()
     else:
+
         LOG.info(f"Skipping {year}-{month}")
         return None
 
 
-if __name__ == "__main__":
-    # (-3.262065, 4.738830) - (1.200134, 11.165904)
-    # Ghana extent
-    mylat = [1, 12]
-    mylon = [-3, 5]
-    output_folder = "/gws/nopw/j04/odanceo/public/ERA5_meteo/netcdf/"
-    wrapper = partial(
-        grab_era5,
-        region="Ghana",
-        output_folder=output_folder,
-        mylat=mylat,
-        mylon=mylon,
+def main():
+    parser = optparse.OptionParser(
+        formatter=optparse.TitledHelpFormatter(), usage=HELP_TEXT
+    )
+    parser.add_option(
+        "-v",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="verbose output",
+    )
+    parser.add_option(
+        "-d",
+        "--data_folder",
+        action="store",
+        default=JASMIN_ERA5,
+        dest="output_folder",
+        help="Output folder to save data",
+    )
+    parser.add_option(
+        "-r",
+        "--region",
+        action="store",
+        dest="region",
+        default="Ghana",
+        help="Region name",
+    )
+    parser.add_option(
+        "-y",
+        "--lat",
+        action="store",
+        default="1,12",
+        type=str,
+        help="Minimum/maximum latitude in decimal degrees.",
+    )
+    parser.add_option(
+        "-x",
+        "--lon",
+        action="store",
+        default="-4,5",
+        type=str,
+        help="Minimum/maximum longitude in decimal degrees.",
     )
 
-    # create a thread pool of 4 threads
+    (options, args) = parser.parse_args()
+    if options.verbose:
+        LOG.setLevel(logging.DEBUG)
+    else:
+        LOG.setLevel(logging.INFO)
+
+    lats = [float(x) for x in options.lat.split(",")]
+    lons = [float(x) for x in options.lon.split(",")]
+    min_lat = min(lats) # south
+    max_lat = max(lats) # north
+    min_lon = min(lons) # west 
+    max_lon = max(lons) # east
+    start_era_download(
+        options.region,
+        options.output_folder,
+        min_lon,
+        max_lon,
+        min_lat,
+        max_lat,
+    )
+
+
+def start_era_download(
+    region, output_folder, min_lon, max_lon, min_lat, max_lat
+):
+    LOG.debug(f"Region: {region}")
+    LOG.debug(f"Output: {output_folder}")
+    LOG.debug(f"Lon: {min_lon}/{max_lon}")
+    LOG.debug(f"Lat: {min_lat}/{max_lat}")
+
+    wrapper = partial(
+        grab_era5,
+        region=region,
+        output_folder=output_folder,
+        mylat=[min_lat, max_lat],
+        mylon=[min_lon, max_lon],
+    )
+
+    # create a thread pool of 8 threads
     years = np.arange(2000, dt.datetime.now().year + 1).astype(np.int)
     months = np.arange(1, 13).astype(np.int)
     with ThreadPoolExecutor(max_workers=8) as executor:
         for year in years:
             for month in months:
                 executor.submit(wrapper, month, year)
+
+
+if __name__ == "__main__":
+    main()
