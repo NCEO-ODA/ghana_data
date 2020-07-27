@@ -1,10 +1,35 @@
 #!/usr/bin/env python
+from io import BytesIO
+import logging
+from urllib.request import urlopen
 import shutil
 from pathlib import Path
+import zipfile
 
 import gdal
 import numpy as np
 
+
+LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.DEBUG)
+if not LOG.handlers:
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - " + "%(levelname)s - %(message)s"
+    )
+    ch.setFormatter(formatter)
+    LOG.addHandler(ch)
+LOG.propagate = False
+
+def download_unzip_file(folder,
+                        url = "https://www.naturalearthdata.com/" +
+              "http//www.naturalearthdata.com/download/50m/" +
+              "cultural/ne_50m_admin_0_countries.zip"):
+    resp = urlopen(url)
+    zipper = zipfile.ZipFile(BytesIO(resp.read()))
+    zipper.extractall(path=folder)
+    
 
 def get_sfc_qc(qa_data, mask57=0b11100000):
     sfc_qa = np.right_shift(np.bitwise_and(qa_data, mask57), 5)
@@ -27,6 +52,11 @@ def mosaic_dates_wgs84_country(
     coordinates in WGS-84 projection.
     """
     folder = Path(folder)
+    cutline = folder/"ne_50m_admin_0_countries.shp"
+    if not cutline.exists():
+        LOG.info("No cutline shapefile. Downloading!")
+        download_unzip_file(folder)
+
     files = [
         f'HDF4_EOS:EOS_GRID:"{f.as_posix():s}":MOD_Grid_MOD15A2H:{layer:s}'
         for f in folder.glob(f"{product:s}.A{year:04d}{doy:03d}.*hdf")
@@ -39,8 +69,7 @@ def mosaic_dates_wgs84_country(
             dstSRS=srs,
             xRes=500,
             yRes=500,
-            cutlineDSName="/gws/nopw/j04/odanceo"
-            + "/public/MCD15/ne_50m_admin_0_countries.shp",
+            cutlineDSName=(folder/"ne_50m_admin_0_countries.shp").as_posix(),
             cutlineWhere=f"NAME='{country:s}'",
             cropToCutline=True,
             creationOptions=[
@@ -56,18 +85,23 @@ def mosaic_dates_wgs84_country(
         return None
 
 
-def do_tifs(year, max_doy, folder="/gws/nopw/j04/odanceo/public/MCD15"):
-
+def do_tifs(year, max_doy, 
+            folder="/gws/nopw/j04/odanceo/public/MCD15",
+            product="MCD15A2H",
+            layers=["Lai_500m", "Fpar_500m", "FparLai_QC"]):
+    
     folder = Path(folder)
+    LOG.info(f"Creating TIFFs in {folder}")
     hdf_folder = folder / "hdfs"
-    for layer in ["Lai_500m", "Fpar_500m", "FparLai_QC"]:
+    for layer in layers:
+        LOG.info(f"Doing {layer}")
         fnames = []
         for doy in range(1, max_doy + 1, 8):
             fname = mosaic_dates_wgs84_country(
                 year,
                 doy,
                 hdf_folder.as_posix(),
-                product="MCD15A2H",
+                product=product,
                 layer=layer,
                 fmt="GTiff",
             )

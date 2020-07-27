@@ -8,10 +8,12 @@ import gdal
 
 from modis_downloader import get_modis_data
 
-MODIS_USERNAME = os.environ["MODIS_USERNAME"]
-MODIS_PASSWORD = os.environt["MODIS_PASSWORD"]
+from to_tif import do_tifs
 
-GHANA_TILES = ["h17v07", "h18v07", "h17v08", "h18v08"]
+MODIS_USERNAME = os.environ["MODIS_USERNAME"]
+MODIS_PASSWORD = os.environ["MODIS_PASSWORD"]
+
+TILES = ["h17v07", "h18v07", "h17v08", "h18v08"]
 
 MCD15_LOCATION = Path("/neodc/modis/data/MCD15A2H/collection6/")
 
@@ -30,7 +32,7 @@ if not LOG.handlers:
 LOG.propagate = False
 
 
-def download_nasa(last_doy, year):
+def download_nasa(last_doy, year, product="MCD15A2H.006"):
     username = MODIS_USERNAME
     password = MODIS_PASSWORD
 
@@ -41,9 +43,8 @@ def download_nasa(last_doy, year):
         .split("-")
     ]
 
-    product = "MCD15A2H.006"
     # You need four tiles to cover the entire Ghana
-    tiles = ["h17v07", "h18v08", "h17v08", "h18v07"]
+    tiles = TILES
     get_modis_data(
         username,
         password,
@@ -59,7 +60,10 @@ def download_nasa(last_doy, year):
 
 
 def link_neodc_files(
-    curr_year, process_location=PROCESS_LOCATION, mcd_location=MCD15_LOCATION
+    curr_year,
+    process_location=PROCESS_LOCATION,
+    mcd_location=MCD15_LOCATION,
+    product="MCD15A2H.006",
 ):
     """Creates symbolic links from the NEODC MODIS MCD15
     archive to the local processing archive for one year."""
@@ -67,7 +71,7 @@ def link_neodc_files(
     files = [
         f
         for f in (mcd_location / f"{curr_year}").rglob("MCD15A2H*.hdf")
-        if f.name.split(".")[2] in GHANA_TILES
+        if f.name.split(".")[2] in TILES
     ]
 
     for fich in files:
@@ -100,3 +104,9 @@ if __name__ == "__main__":
     LOG.info(f"Last DoY: {last_time}")
     if dt.datetime.strptime(f"{current_year}/{last_time}", "%Y/%j") <= today:
         download_nasa(last_time, current_year)
+    # Scan local files to see what's the latest we've processed
+    last_time = scan_current_files(PROCESS_LOCATION, current_year)
+    do_tifs(current_year, last_time, folder=PROCESS_LOCATION,
+            product="MCD15A2H",
+            layers=["Lai_500m", "Fpar_500m", "FparLai_QC"]
+            )
