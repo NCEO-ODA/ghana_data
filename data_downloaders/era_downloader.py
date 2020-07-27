@@ -4,10 +4,10 @@ to CABO format to use within WOFOST. So far, using ERA5
 """
 import datetime as dt
 import logging
+import optparse
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-import optparse
 from pathlib import Path
 
 import cdsapi

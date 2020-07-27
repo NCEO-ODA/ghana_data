@@ -1,14 +1,13 @@
 #!/usr/bin/env python
-from io import BytesIO
 import logging
-from urllib.request import urlopen
 import shutil
-from pathlib import Path
 import zipfile
+from io import BytesIO
+from pathlib import Path
+from urllib.request import urlopen
 
 import gdal
 import numpy as np
-
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)

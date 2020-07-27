@@ -4,12 +4,10 @@ import logging
 import os
 from pathlib import Path
 
+import click
 import gdal
 
-import click
-
 from modis_downloader import get_modis_data
-
 from to_tif import do_tifs
 
 try:
