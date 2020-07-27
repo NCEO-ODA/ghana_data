@@ -86,10 +86,9 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
         LOG.info(f"Downloading {year}-{month}")
         #'80/-50/-25/0', # North, West, South, East.
         area = (
-            f"{int(mylat[0]):d}/{int(mylon[0]):d}/"
-            + f"{int(mylat[1]):d}/{int(mylon[1]):d}"
+            f"{int(mylat[1]):d}/{int(mylon[0]):d}/"
+            + f"{int(mylat[0]):d}/{int(mylon[1]):d}"
         )
-
         c = cdsapi.Client()
         c.retrieve(
             "reanalysis-era5-single-levels",
@@ -178,10 +177,10 @@ def main():
 
     lats = [float(x) for x in options.lat.split(",")]
     lons = [float(x) for x in options.lon.split(",")]
-    min_lat = min(lats)
-    max_lat = max(lats)
-    min_lon = min(lons)
-    max_lon = max(lons)
+    min_lat = min(lats) # south
+    max_lat = max(lats) # north
+    min_lon = min(lons) # west 
+    max_lon = max(lons) # east
     start_era_download(
         options.region,
         options.output_folder,
