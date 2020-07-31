@@ -275,8 +275,10 @@ def plot_z_score(
         alpha=1.0,
         linestyle="--",
     )
-    gl.xlabels_top = False
-    gl.ylabels_right = False
+    gl.top_labels = False
+    gl.right_labels = False
     gl.xformatter = LONGITUDE_FORMATTER
     gl.yformatter = LATITUDE_FORMATTER
     ax.set_extent([-3.5, 1.25, 4.5, max(ds.coords["y"])], ccrs.PlateCarree())
+    
+    return fig
