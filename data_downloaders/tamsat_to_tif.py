@@ -52,13 +52,13 @@ for year in range(2000, 2021):
         "runoff",
     ]:
         if Path(
-            f"/gws/nopw/j04/odanceo/public/sm_tiff/tamsat_{variable}_{year}.tif"
+            f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/tamsat_{variable}_{year}.tif"
         ).exists():
             print(f"Skipping tamsat_{variable}_{year}.tif")
             continue
         drv = gdal.GetDriverByName("GTiff")
         dst_ds = drv.Create(
-            f"/gws/nopw/j04/odanceo/public/sm_tiff/tamsat_{variable}_{year}.tif",
+            f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/tamsat_{variable}_{year}.tif",
             278,
             292,
             len(doys),
@@ -87,7 +87,7 @@ for year in range(2000, 2021):
         variable = f"{vari}_{layer+1}"
         drv = gdal.GetDriverByName("GTiff")
         dst_ds = drv.Create(
-            f"/gws/nopw/j04/odanceo/public/sm_tiff/tamsat_{variable}_{year}.tif",
+            f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/tamsat_{variable}_{year}.tif",
             278,
             292,
             len(doys),
