@@ -114,9 +114,6 @@ def scan_current_files(data_loc, curr_year):
 @click.option("--username", default=MODIS_USERNAME, help="MODIS username")
 @click.option("--password", default=MODIS_PASSWORD, help="MODIS password")
 def main(location, product, layers, username, password):
-    import pdb
-
-    pdb.set_trace()
     if username == "":
         raise ValueError("No NASA username set!")
     if password == "":
