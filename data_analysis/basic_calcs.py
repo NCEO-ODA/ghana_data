@@ -31,6 +31,9 @@ ERA5_VARIABLES = [
     "wspd",
 ]
 MODIS_VARIABLES = ["Fpar_500m", "Lai_500m", "FparLai_QC"]
+TAMSAT_VARIABLES = ["ecan_gb", "esoil_gb", "precip", "runoff",
+                    "smc_avail_top", "smcl_1", "smcl_2", 
+                    "smcl_3", "smcl_4"]
 
 
 def get_epsg_code(ds_name):
@@ -48,6 +51,40 @@ def get_epsg_code(ds_name):
     epsg_code = std_oot.decode("utf-8").split(":")[1].strip()
 
     return epsg_code
+
+
+def get_tamsat_ds(variable, remote_url=JASMIN_URL):
+    assert (
+        variable in TAMSAT_VARIABLES
+    ), f"{variable} not one of {TAMSAT_VARIABLES}"
+    today = dt.datetime.now()
+
+    arrays = []
+    sample_url = f"/vsicurl/{remote_url}/soil_moisture/nc/GTiff/tamsat_{variable}_2004.tif"
+    epsg = get_epsg_code(sample_url)
+
+    def do_one_year(year):
+        url = f"/vsicurl/{remote_url}/soil_moisture/" +\
+              f"nc/GTiff/tamsat_{variable}_{year}.tif"
+        retval = gdal.Info(url, allMetadata=True, format="json")
+        dates = [
+            pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
+        ]
+        ds = xr.open_rasterio(url, chunks={"x": 256, "y": 256})
+        ds = ds.rename({"band": "time"})
+        ds = ds.assign_coords({"time": dates})
+        return ds
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        years = [y for y in range(2002, today.year + 1)]
+        arrays = list(
+            tqdm(executor.map(do_one_year, years), total=len(years))
+        )
+
+    ds = xr.concat(arrays, dim="time")
+    ds.attrs["epsg"] = epsg
+    return ds
+    
 
 
 def get_era5_ds(variable, remote_url=JASMIN_URL):
