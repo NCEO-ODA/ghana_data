@@ -16,6 +16,10 @@ proj = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563
 
 for year in range(2000, 2021):
     print(f"Doing year {year}")
+    nc_cat = Path(f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/{year}.nc")
+    if nc_cat.exists():
+        print("Removing stale annual NetCDF file...")
+        nc_cat.unlink()  # In case we end up adding more and more copies of same date
     cmd = [
         "cdo",
         "cat",
@@ -31,7 +35,12 @@ for year in range(2000, 2021):
         raise subprocess.CalledProcessError(p.returncode, p.args)
 
     ds = xr.open_dataset(
-        f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/{year}.nc", chunks={}
+        f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/{year}.nc",
+        decode_times=True,
+        decode_cf=True,
+        mask_and_scale=True,
+        decode_coords=True,
+        chunks={"time": 1},
     )
 
     tsteps = [
@@ -55,7 +64,8 @@ for year in range(2000, 2021):
             f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/tamsat_{variable}_{year}.tif"
         ).exists():
             print(f"Skipping tamsat_{variable}_{year}.tif")
-            continue
+            # continue
+            pass
         drv = gdal.GetDriverByName("GTiff")
         dst_ds = drv.Create(
             f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/tamsat_{variable}_{year}.tif",
@@ -77,8 +87,9 @@ for year in range(2000, 2021):
             this_band = dst_ds.GetRasterBand(band + 1)
             this_band.SetMetadata({"DoY": "%03d" % doy, "Date": tstep})
             x = ds[variable].isel({"time": band}).values
+            x[x == x[0, 0]] = np.nan
             x[np.isnan(x)] = -9999
-            this_band.WriteArray(x)
+            this_band.WriteArray(np.flipud(x))
             this_band.SetNoDataValue(-9999)
         dst_ds = None
 
