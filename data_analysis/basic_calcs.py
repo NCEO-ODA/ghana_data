@@ -137,7 +137,7 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
     return ds
 
 
-def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
+def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
     """Return an xarray dataset with a MODIS variable.
     Function takes care of getting the timestamps
     sorted, and selects all available time steps.
@@ -172,12 +172,13 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
             )
             for d in retval["bands"]
         ]
-        ds = xr.open_rasterio(url, chunks={})
+        ds = xr.open_rasterio(url,
+                              chunks={'band':1, "x":256, "y":256})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
         return ds
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
         years = [y for y in range(2002, today.year + 1)]
         arrays = list(
             tqdm(executor.map(do_one_year, years), total=len(years))
