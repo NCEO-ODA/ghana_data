@@ -19,6 +19,7 @@ dependencies:
  - cartopy
  - pytest
  - dask
+ - distributed
  - statsmodels
  - pyyaml
  - pip

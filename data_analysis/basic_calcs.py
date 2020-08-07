@@ -2,11 +2,21 @@
 """Some remote data access routines to access the NCEO 
 data storage on JASMIN."""
 import datetime as dt
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import gdal
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import seaborn as sns
 import xarray as xr
+from cartopy.mpl.gridliner import LATITUDE_FORMATTER, LONGITUDE_FORMATTER
+from cartopy.mpl.ticker import LatitudeFormatter, LongitudeFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from tqdm.auto import tqdm
 
 JASMIN_URL = "http://gws-access.ceda.ac.uk/public/odanceo/"
@@ -21,6 +31,60 @@ ERA5_VARIABLES = [
     "wspd",
 ]
 MODIS_VARIABLES = ["Fpar_500m", "Lai_500m", "FparLai_QC"]
+TAMSAT_VARIABLES = ["ecan_gb", "esoil_gb", "precip", "runoff",
+                    "smc_avail_top", "smcl_1", "smcl_2", 
+                    "smcl_3", "smcl_4"]
+
+
+def get_epsg_code(ds_name):
+    """Need to get the EPSG code to pass to cartopy. Not everyone uses
+    Lat/Long grids, don't you know...
+    """
+    # Easiest way seems to be able to pipe out to `gdalsrsinfo` and hope
+    # it works
+    p = subprocess.Popen(
+        ["gdalsrsinfo", "-e", "-o", "epsg", ds_name], stdout=subprocess.PIPE
+    )
+
+    std_oot, _ = p.communicate()
+    # This might fail?
+    epsg_code = std_oot.decode("utf-8").split(":")[1].strip()
+
+    return epsg_code
+
+
+def get_tamsat_ds(variable, remote_url=JASMIN_URL):
+    assert (
+        variable in TAMSAT_VARIABLES
+    ), f"{variable} not one of {TAMSAT_VARIABLES}"
+    today = dt.datetime.now()
+
+    arrays = []
+    sample_url = f"/vsicurl/{remote_url}/soil_moisture/nc/GTiff/tamsat_{variable}_2004.tif"
+    epsg = get_epsg_code(sample_url)
+
+    def do_one_year(year):
+        url = f"/vsicurl/{remote_url}/soil_moisture/" +\
+              f"nc/GTiff/tamsat_{variable}_{year}.tif"
+        retval = gdal.Info(url, allMetadata=True, format="json")
+        dates = [
+            pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
+        ]
+        ds = xr.open_rasterio(url, chunks={"x": 256, "y": 256})
+        ds = ds.rename({"band": "time"})
+        ds = ds.assign_coords({"time": dates})
+        return ds
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        years = [y for y in range(2002, today.year + 1)]
+        arrays = list(
+            tqdm(executor.map(do_one_year, years), total=len(years))
+        )
+
+    ds = xr.concat(arrays, dim="time")
+    ds.attrs["epsg"] = epsg
+    return ds
+    
 
 
 def get_era5_ds(variable, remote_url=JASMIN_URL):
@@ -48,6 +112,8 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
     today = dt.datetime.now()
 
     arrays = []
+    sample_url = f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_2004.tif"
+    epsg = get_epsg_code(sample_url)
 
     def do_one_year(year):
         url = f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif"
@@ -67,10 +133,11 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
         )
 
     ds = xr.concat(arrays, dim="time")
+    ds.attrs["epsg"] = epsg
     return ds
 
 
-def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
+def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
     """Return an xarray dataset with a MODIS variable.
     Function takes care of getting the timestamps
     sorted, and selects all available time steps.
@@ -93,6 +160,8 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
         product in MODIS_VARIABLES
     ), f"{product} is not one of {MODIS_VARIABLES}"
     today = dt.datetime.now()
+    sample_url = f"/vsicurl/{remote_url}/MCD15/{product}_2004.tif"
+    epsg = get_epsg_code(sample_url)
 
     def do_one_year(year):
         url = f"/vsicurl/{remote_url}/MCD15/{product}_{year}.tif"
@@ -103,19 +172,20 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m"):
             )
             for d in retval["bands"]
         ]
-        ds = xr.open_rasterio(url, chunks={})
+        ds = xr.open_rasterio(url,
+                              chunks={'band':1, "x":256, "y":256})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
         return ds
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
         years = [y for y in range(2002, today.year + 1)]
         arrays = list(
             tqdm(executor.map(do_one_year, years), total=len(years))
         )
 
     ds = xr.concat(arrays, dim="time")
-
+    ds.attrs["epsg"] = epsg
     return ds
 
 
@@ -152,3 +222,101 @@ def calculate_climatology(
         .std("time")
     )
     return clim_mean, clim_std
+
+
+def calculate_z_score(ds, curr_month_number=None):
+    curr_year = dt.datetime.now().year
+    if curr_month_number is None:
+        curr_month_number = dt.datetime.now().month
+    clim_mean, clim_std = calculate_climatology(ds)
+    curr_month = (
+        ds.sel({"time": slice(f"{curr_year}-01-01", f"{curr_year}-12-31")})
+        .groupby("time.month")
+        .mean()
+    )
+    t_step = {"month": curr_month_number}
+    z_score = (clim_mean.sel(t_step) - curr_month.sel(t_step)) / clim_std.sel(
+        t_step
+    )
+    return z_score
+
+
+def plot_z_score(
+    ds,
+    cmap=plt.cm.RdBu,
+    contour=True,
+    vmin=None,
+    vmax=None,
+    levels=np.linspace(-2.5, 2.5, 19),
+):
+    # The original parameters were changed to 3 degrees east and 11 degrees north
+    proj = ccrs.LambertAzimuthalEqualArea(
+        central_latitude=11, central_longitude=3
+    )
+    sns.set_context("paper")
+    sns.set_style("whitegrid")
+    fig = plt.figure(figsize=(8, 12))
+    ax = plt.axes(projection=proj)
+    # create colorbar
+    cmap = plt.cm.get_cmap(cmap)
+    if contour:
+        norm = colors.BoundaryNorm(levels, cmap.N)
+        # plot either contour of pcolormesh map
+        im = ax.contourf(
+            ds.coords["x"],
+            ds.coords["y"],
+            ds.data,
+            levels=levels,
+            norm=norm,
+            transform=ccrs.PlateCarree(),
+            spacing="uniform",
+            extend="max",
+            cmap=cmap,
+        )
+    else:
+        im = ax.pcolormesh(
+            ds.coords["x"],
+            ds.coords["y"],
+            ds.data,
+            transform=ccrs.PlateCarree(),
+            # norm=norm,
+            # vmin=vmin, vmax=vmax,
+            cmap=cmap,
+        )
+    ax.coastlines(resolution="10m")
+    ax.add_feature(cfeature.STATES, edgecolor="gray", alpha=0.3)
+    ax.add_feature(cfeature.BORDERS)
+    lake = cfeature.NaturalEarthFeature(
+        category="physical",
+        name="lakes",
+        scale="10m",
+        facecolor="none",
+        edgecolor="black",
+    )
+    ax.add_feature(lake)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes(
+        "right", size="5%", pad=0.05, axes_class=plt.Axes
+    )
+    cbar = fig.colorbar(im, cax=cax, extend="max")
+    cbar.set_label("anomaly", fontsize=12)
+
+    lon_formatter = LongitudeFormatter(zero_direction_label=False)
+    ax.xaxis.set_major_formatter(lon_formatter)
+    lat_formatter = LatitudeFormatter()
+    ax.yaxis.set_major_formatter(lat_formatter)
+    gl = ax.gridlines(
+        crs=ccrs.PlateCarree(),
+        draw_labels=True,
+        linewidth=0.5,
+        color="gray",
+        alpha=1.0,
+        linestyle="--",
+    )
+    gl.top_labels = False
+    gl.right_labels = False
+    gl.xformatter = LONGITUDE_FORMATTER
+    gl.yformatter = LATITUDE_FORMATTER
+    ax.set_extent([-3.5, 1.25, 4.5, 11.7], ccrs.PlateCarree())
+    
+    return fig
