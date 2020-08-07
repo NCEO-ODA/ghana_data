@@ -11,6 +11,9 @@ from basic_calcs  import get_modis_ds
 from basic_calcs  import get_era5_ds
 from basic_calcs  import get_tamsat_ds
 
+
+
+
 def to_tif(x, fname, nx, ny, n_bands, geoT, proj):
     drv = gdal.GetDriverByName("GTiff")
     dst_ds = drv.Create(fname, nx, ny, n_bands, gdal.GDT_Float32,
@@ -74,9 +77,9 @@ if __name__ == "__main__":
             m, s = calculate_climatology(ds, first_year=v[0], period="time.month", last_year=v[1])
             
             fname = f"/gws/nopw/j04/odanceo/public/MCD15/clim_mean_variable_{k}.tif"
-            to_tif(m.compute(), fname, nx, ny, 12, geoT, proj)
+            to_tif(m, fname, nx, ny, 12, geoT, proj)
             fname = f"/gws/nopw/j04/odanceo/public/MCD15/clim_std_variable_{k}.tif"
-            to_tif(s.compute(), fname, nx, ny, 12, geoT, proj)
+            to_tif(s, fname, nx, ny, 12, geoT, proj)
         
         
     
