@@ -31,9 +31,17 @@ ERA5_VARIABLES = [
     "wspd",
 ]
 MODIS_VARIABLES = ["Fpar_500m", "Lai_500m", "FparLai_QC"]
-TAMSAT_VARIABLES = ["ecan_gb", "esoil_gb", "precip", "runoff",
-                    "smc_avail_top", "smcl_1", "smcl_2", 
-                    "smcl_3", "smcl_4"]
+TAMSAT_VARIABLES = [
+    "ecan_gb",
+    "esoil_gb",
+    "precip",
+    "runoff",
+    "smc_avail_top",
+    "smcl_1",
+    "smcl_2",
+    "smcl_3",
+    "smcl_4",
+]
 
 
 def get_epsg_code(ds_name):
@@ -53,6 +61,54 @@ def get_epsg_code(ds_name):
     return epsg_code
 
 
+def get_climatology(product, variable, url=JASMIN_URL, period="long"):
+    if not product.upper() in ["ERA", "TAMSAT", "MODIS"]:
+        raise ValueError(
+            f'{product} isn\'t one of {["ERA", "TAMSAT", "MODIS"]}'
+        )
+    if product == "ERA":
+        if not variable in ERA5_VARIABLES:
+            raise ValueError(
+                f"ERA5 product only has variables {ERA5_VARIABLES}"
+            )
+        mean_url = (
+            f"/vsicurl/{url}/ERA5_meteo/clim_mean_{variable}_{period}.tif"
+        )
+        std_url = (
+            f"/vsicurl/{url}/ERA5_meteo/clim_std_{variable}_{period}.tif"
+        )
+        mean = xr.open_rasterio(mean_url, chunks={"band": 1})
+        std = xr.open_rasterio(std_url, chunks={"band": 1})
+
+    elif product == "TAMSAT":
+        if not variable in TAMSAT_VARIABLES:
+            raise ValueError(
+                f"TAMSAT product only has variables {TAMSAT_VARIABLES}"
+            )
+        mean_url = f"/vsicurl/{url}/soil_moisture/nc/GTiff/clim_mean_{variable}_{period}.tif"
+        std_url = f"/vsicurl/{url}/soil_moisture/nc/GTiff/clim_std_{variable}_{period}.tif"
+        mean = xr.open_rasterio(mean_url, chunks={"band": 1})
+        std = xr.open_rasterio(std_url, chunks={"band": 1})
+
+    elif product == "MODIS":
+        if not variable in MODIS_VARIABLES:
+            raise ValueError(
+                f"MODIS product only has variables {MODIS_VARIABLES}"
+            )
+        mean_url = f"/vsicurl/{url}/soil_moisture/nc/GTiff/clim_mean_{variable}_{period}.tif"
+        std_url = f"/vsicurl/{url}/soil_moisture/nc/GTiff/clim_std_{variable}_{period}.tif"
+        mean = xr.open_rasterio(
+            mean_url, chunks={"band": 1, "x": 256, "y": 256}
+        )
+        std = xr.open_rasterio(
+            std_url, chunks={"band": 1, "x": 256, "y": 256}
+        )
+    mean = mean.rename({"band": "month"})
+    std = std.rename({"band": "month"})    
+
+    return mean, std
+
+
 def get_tamsat_ds(variable, remote_url=JASMIN_URL):
     assert (
         variable in TAMSAT_VARIABLES
@@ -64,8 +120,10 @@ def get_tamsat_ds(variable, remote_url=JASMIN_URL):
     epsg = get_epsg_code(sample_url)
 
     def do_one_year(year):
-        url = f"/vsicurl/{remote_url}/soil_moisture/" +\
-              f"nc/GTiff/tamsat_{variable}_{year}.tif"
+        url = (
+            f"/vsicurl/{remote_url}/soil_moisture/"
+            + f"nc/GTiff/tamsat_{variable}_{year}.tif"
+        )
         retval = gdal.Info(url, allMetadata=True, format="json")
         dates = [
             pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
@@ -83,8 +141,8 @@ def get_tamsat_ds(variable, remote_url=JASMIN_URL):
 
     ds = xr.concat(arrays, dim="time")
     ds.attrs["epsg"] = epsg
+
     return ds
-    
 
 
 def get_era5_ds(variable, remote_url=JASMIN_URL):
@@ -172,8 +230,7 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
             )
             for d in retval["bands"]
         ]
-        ds = xr.open_rasterio(url,
-                              chunks={'band':1, "x":256, "y":256})
+        ds = xr.open_rasterio(url, chunks={"band": 1, "x": 256, "y": 256})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
         return ds
@@ -224,16 +281,25 @@ def calculate_climatology(
     return clim_mean, clim_std
 
 
-def calculate_z_score(ds, curr_month_number=None):
+def calculate_z_score(ds, clim_mean=None, clim_std=None, curr_month_number=None):
     curr_year = dt.datetime.now().year
     if curr_month_number is None:
         curr_month_number = dt.datetime.now().month
-    clim_mean, clim_std = calculate_climatology(ds)
+    if clim_mean is None or clim_std is None:
+        clim_mean, clim_std = calculate_climatology(ds)
     curr_month = (
         ds.sel({"time": slice(f"{curr_year}-01-01", f"{curr_year}-12-31")})
         .groupby("time.month")
         .mean()
     )
+    max_month_pres = curr_month.coords['month'].values[-1]
+    if curr_month_number is None:
+        print(f"Last month in dataset is {max_month_pres}, using as current")
+        curr_month_number = max_month_pres
+    elif curr_month_number > max_month_pres:
+        print(f"Only have data up to month {max_month_pres}, using as current")
+        curr_month_number = max_month_pres
+        
     t_step = {"month": curr_month_number}
     z_score = (clim_mean.sel(t_step) - curr_month.sel(t_step)) / clim_std.sel(
         t_step
@@ -318,5 +384,6 @@ def plot_z_score(
     gl.xformatter = LONGITUDE_FORMATTER
     gl.yformatter = LATITUDE_FORMATTER
     ax.set_extent([-3.5, 1.25, 4.5, 11.7], ccrs.PlateCarree())
-    
+
     return fig
+
