@@ -54,13 +54,14 @@ if __name__ == "__main__":
     for variable in ERA5_VARIABLES:
         ds = get_era5_ds(variable)
         for k, v in clim_periods.items():
+            print(variable, k)
             m, s = calculate_climatology(
                 ds, first_year=v[0], period="time.month", last_year=v[1]
             )
 
-            fname = f"/gws/nopw/j04/odanceo/public/ERA5_meteo/clim_mean_variable_{k}.tif"
+            fname = f"/gws/nopw/j04/odanceo/public/ERA5_meteo/clim_mean_{variable}_{k}.tif"
             to_tif(m.compute(), fname, nx, ny, 12, geoT, proj)
-            fname = f"/gws/nopw/j04/odanceo/public/ERA5_meteo/clim_std_variable_{k}.tif"
+            fname = f"/gws/nopw/j04/odanceo/public/ERA5_meteo/clim_std_{variable}_{k}.tif"
             to_tif(s.compute(), fname, nx, ny, 12, geoT, proj)
 
     ####### TAMSAT
@@ -73,13 +74,14 @@ if __name__ == "__main__":
     for variable in TAMSAT_VARIABLES:
         ds = get_tamsat_ds(variable)
         for k, v in clim_periods.items():
+            print(variable, k)
             m, s = calculate_climatology(
                 ds, first_year=v[0], period="time.month", last_year=v[1]
             )
 
-            fname = f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/clim_mean_variable_{k}.tif"
+            fname = f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/clim_mean_{variable}_{k}.tif"
             to_tif(m.compute(), fname, nx, ny, 12, geoT, proj)
-            fname = f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/clim_std_variable_{k}.tif"
+            fname = f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/clim_std_{variable}_{k}.tif"
             to_tif(s.compute(), fname, nx, ny, 12, geoT, proj)
     client = Client(n_workers=4)
     ### MODIS
@@ -95,7 +97,7 @@ if __name__ == "__main__":
                 ds, first_year=v[0], period="time.month", last_year=v[1]
             )
             print("dumping to disk...")
-            fname = f"/gws/nopw/j04/odanceo/public/MCD15/clim_mean_variable_{k}.tif"
+            fname = f"/gws/nopw/j04/odanceo/public/MCD15/clim_mean_{variable}_{k}.tif"
             to_tif(m, fname, nx, ny, 12, geoT, proj)
-            fname = f"/gws/nopw/j04/odanceo/public/MCD15/clim_std_variable_{k}.tif"
+            fname = f"/gws/nopw/j04/odanceo/public/MCD15/clim_std_{variable}_{k}.tif"
             to_tif(s, fname, nx, ny, 12, geoT, proj)
