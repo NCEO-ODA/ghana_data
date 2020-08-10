@@ -4,6 +4,7 @@ data storage on JASMIN."""
 import datetime as dt
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -45,7 +46,8 @@ TAMSAT_VARIABLES = [
 ]
 
 
-def add_logo(fig, logo="gssti_nceo_logo2.png", x_o=400, y_o=25):
+def add_logo(logo="gssti_nceo_logo2.png", origin="upper",
+             x_o=0, y_o=0, alpha=0.5):
     """
     Function that adds GSSTI and NCEO logo to a figure
     :param fig: Figure object to add logo to
@@ -53,8 +55,20 @@ def add_logo(fig, logo="gssti_nceo_logo2.png", x_o=400, y_o=25):
     :param y_o: yo position of logo on figure (float)
     :return: 'logo added' (str)
     """
-    logo_arr = mpimg.imread(logo)
-    fig.figimage(logo_arr, xo=x_o, yo=y_o)
+    logo_loc = (Path().cwd())/logo
+    if not logo_loc.exists():
+        logo = [f for f in Path().cwd().rglob(f"**/{logo}")]
+        logo = logo[0]
+    else:
+        logo = logo_loc.as_posix()
+                                                     
+
+    ax = plt.axes([.6,0.05, 0.4, 0.075], frameon=True)  # Change the numbers in this array to position your image [left, bottom, width, height])
+    im = ax.imshow(mpimg.imread(logo))
+    im.set_zorder(0)
+    ax.axis('off')  # get rid of the ticks and ticklabels
+    #fig.figimage(mpimg.imread(logo),
+    #             xo=x_o, yo=y_o)
 
 
 def get_epsg_code(ds_name):
@@ -108,8 +122,8 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
             raise ValueError(
                 f"MODIS product only has variables {MODIS_VARIABLES}"
             )
-        mean_url = f"/vsicurl/{url}/soil_moisture/nc/GTiff/clim_mean_{variable}_{period}.tif"
-        std_url = f"/vsicurl/{url}/soil_moisture/nc/GTiff/clim_std_{variable}_{period}.tif"
+        mean_url = f"/vsicurl/{url}/MCD15/clim_mean_{variable}_{period}.tif"
+        std_url = f"/vsicurl/{url}/MCD15/clim_std_{variable}_{period}.tif"
         mean = xr.open_rasterio(
             mean_url, chunks={"band": 1, "x": 256, "y": 256}
         )
