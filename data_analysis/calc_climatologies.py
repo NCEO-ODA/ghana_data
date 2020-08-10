@@ -85,7 +85,7 @@ if __name__ == "__main__":
             to_tif(s.compute(), fname, nx, ny, 12, geoT, proj)
     client = Client(n_workers=4)
     ### MODIS
-    g = gdal.Open("/gws/nopw/j04/odanceo/public/MCD15/Lai_500m_2010.tif")
+    g = gdal.Open("/gws/nopw/j04/odanceo/public/MCD15/Lai_500m_2010wgs84.tif")
     geoT = g.GetGeoTransform()
     proj = g.GetProjectionRef()
     nx, ny = g.RasterXSize, g.RasterYSize
