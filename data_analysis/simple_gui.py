@@ -2,7 +2,7 @@
 
 import ipywidgets.widgets as widgets
 
-from calc_climatologies import (
+from .basic_calcs import (
     ERA5_VARIABLES,
     MODIS_VARIABLES,
     TAMSAT_VARIABLES,
@@ -68,7 +68,7 @@ def plot_modis_anomaly():
 
 
 def modis_anomaly(variable, lta_period):
-    ds = get_modis_ds(variable)
+    ds = get_modis_ds(product=variable)
     m, s = get_climatology("MODIS", variable, period=lta_period)
     z_score = calculate_z_score(ds, clim_mean=m, clim_std=s)
     _ = plot_z_score(z_score, contour=False)
