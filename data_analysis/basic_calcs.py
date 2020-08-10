@@ -245,11 +245,11 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
         product in MODIS_VARIABLES
     ), f"{product} is not one of {MODIS_VARIABLES}"
     today = dt.datetime.now()
-    sample_url = f"/vsicurl/{remote_url}/MCD15/{product}_2004.tif"
+    sample_url = f"/vsicurl/{remote_url}/MCD15/{product}_2004wgs84.tif"
     epsg = get_epsg_code(sample_url)
 
     def do_one_year(year):
-        url = f"/vsicurl/{remote_url}/MCD15/{product}_{year}.tif"
+        url = f"/vsicurl/{remote_url}/MCD15/{product}_{year}wgs84.tif"
         retval = gdal.Info(url, allMetadata=True, format="json")
         dates = [
             pd.to_datetime(
@@ -257,7 +257,8 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
             )
             for d in retval["bands"]
         ]
-        ds = xr.open_rasterio(url, chunks={"band": 1, "x": 256, "y": 256})
+        
+        ds = xr.open_rasterio(url, chunks={"band": 1, "x": 32, "y": 32})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
         return ds
