@@ -9,6 +9,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import gdal
 import matplotlib.colors as colors
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -42,6 +43,18 @@ TAMSAT_VARIABLES = [
     "smcl_3",
     "smcl_4",
 ]
+
+
+def add_logo(fig, logo="gssti_nceo_logo2.png", x_o=400, y_o=25):
+    """
+    Function that adds GSSTI and NCEO logo to a figure
+    :param fig: Figure object to add logo to
+    :param x_o: xo position of logo on figure (float)
+    :param y_o: yo position of logo on figure (float)
+    :return: 'logo added' (str)
+    """
+    logo_arr = mpimg.imread(logo)
+    fig.figimage(logo_arr, xo=x_o, yo=y_o)
 
 
 def get_epsg_code(ds_name):
@@ -104,7 +117,7 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
             std_url, chunks={"band": 1, "x": 256, "y": 256}
         )
     mean = mean.rename({"band": "month"})
-    std = std.rename({"band": "month"})    
+    std = std.rename({"band": "month"})
 
     return mean, std
 
@@ -281,7 +294,9 @@ def calculate_climatology(
     return clim_mean, clim_std
 
 
-def calculate_z_score(ds, clim_mean=None, clim_std=None, curr_month_number=None):
+def calculate_z_score(
+    ds, clim_mean=None, clim_std=None, curr_month_number=None
+):
     curr_year = dt.datetime.now().year
     if curr_month_number is None:
         curr_month_number = dt.datetime.now().month
@@ -292,14 +307,16 @@ def calculate_z_score(ds, clim_mean=None, clim_std=None, curr_month_number=None)
         .groupby("time.month")
         .mean()
     )
-    max_month_pres = curr_month.coords['month'].values[-1]
+    max_month_pres = curr_month.coords["month"].values[-1]
     if curr_month_number is None:
         print(f"Last month in dataset is {max_month_pres}, using as current")
         curr_month_number = max_month_pres
     elif curr_month_number > max_month_pres:
-        print(f"Only have data up to month {max_month_pres}, using as current")
+        print(
+            f"Only have data up to month {max_month_pres}, using as current"
+        )
         curr_month_number = max_month_pres
-        
+
     t_step = {"month": curr_month_number}
     z_score = (clim_mean.sel(t_step) - curr_month.sel(t_step)) / clim_std.sel(
         t_step
@@ -314,6 +331,7 @@ def plot_z_score(
     vmin=None,
     vmax=None,
     levels=np.linspace(-2.5, 2.5, 19),
+    logo=True,
 ):
     # The original parameters were changed to 3 degrees east and 11 degrees north
     proj = ccrs.LambertAzimuthalEqualArea(
@@ -384,6 +402,6 @@ def plot_z_score(
     gl.xformatter = LONGITUDE_FORMATTER
     gl.yformatter = LATITUDE_FORMATTER
     ax.set_extent([-3.5, 1.25, 4.5, 11.7], ccrs.PlateCarree())
-
+    if logo:
+        add_logo()
     return fig
-
