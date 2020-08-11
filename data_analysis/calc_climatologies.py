@@ -51,7 +51,9 @@ if __name__ == "__main__":
     MODIS = True
     if ERA5:
         ####### ERA5
-        g = gdal.Open("/gws/nopw/j04/odanceo/public/ERA5_meteo/precip_2001.tif")
+        g = gdal.Open(
+            "/gws/nopw/j04/odanceo/public/ERA5_meteo/precip_2001.tif"
+        )
         geoT = g.GetGeoTransform()
         proj = g.GetProjectionRef()
         nx, ny = g.RasterXSize, g.RasterYSize
@@ -89,7 +91,9 @@ if __name__ == "__main__":
     if MODIS:
         client = Client(n_workers=2)
         ### MODIS
-        g = gdal.Open("/gws/nopw/j04/odanceo/public/MCD15/Lai_500m_2010wgs84.tif")
+        g = gdal.Open(
+            "/gws/nopw/j04/odanceo/public/MCD15/Lai_500m_2010wgs84.tif"
+        )
         geoT = g.GetGeoTransform()
         proj = g.GetProjectionRef()
         nx, ny = g.RasterXSize, g.RasterYSize
