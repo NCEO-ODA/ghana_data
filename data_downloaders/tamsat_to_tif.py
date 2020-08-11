@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import subprocess
+import sys
 from pathlib import Path
 
 import gdal
@@ -13,8 +14,7 @@ geoT = [-17.875, 0.25, 0, 37.375, 0.0, -0.25]
 
 proj = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
 
-
-for year in range(2000, 2021):
+def main(year):
     print(f"Doing year {year}")
     nc_cat = Path(f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/{year}.nc")
     if nc_cat.exists():
@@ -125,3 +125,7 @@ for year in range(2000, 2021):
             this_band.WriteArray(x)
             this_band.SetNoDataValue(-9999)
         dst_ds = None
+
+if __name__ == "__main__":
+    year = int(sys.argv[1])
+    main(year)
