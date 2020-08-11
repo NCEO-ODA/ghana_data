@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 
-import numpy as np
 import gdal
+import numpy as np
+from basic_calcs import (
+    ERA5_VARIABLES,
+    MODIS_VARIABLES,
+    TAMSAT_VARIABLES,
+    calculate_climatology,
+    get_era5_ds,
+    get_modis_ds,
+    get_tamsat_ds,
+)
 
 # from dask import LocalCluster
-
-from basic_calcs import ERA5_VARIABLES, MODIS_VARIABLES
-from basic_calcs import TAMSAT_VARIABLES
-
-from basic_calcs import calculate_climatology
-from basic_calcs import get_modis_ds
-from basic_calcs import get_era5_ds
-from basic_calcs import get_tamsat_ds
 
 
 def to_tif(x, fname, nx, ny, n_bands, geoT, proj):
@@ -89,7 +90,6 @@ if __name__ == "__main__":
                 fname = f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/clim_std_{variable}_{k}.tif"
                 to_tif(s.compute(), fname, nx, ny, 12, geoT, proj)
     if MODIS:
-        client = Client(n_workers=2)
         ### MODIS
         g = gdal.Open(
             "/gws/nopw/j04/odanceo/public/MCD15/Lai_500m_2010wgs84.tif"

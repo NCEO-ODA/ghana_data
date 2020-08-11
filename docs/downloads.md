@@ -37,13 +37,13 @@ The ERA5 data is the new generation ECMWF reanalysis product. As a reanalysis pr
 ```bash
 Usage
 =====
-  
+
 SYNOPSIS
-./era_downloader.py 
+./era_downloader.py
 DESCRIPTION
 A program to download Copernicus data.
 EXAMPLES
-./era_downloader.py  -v           
+./era_downloader.py  -v
 
 EXIT STATUS
     No exit status yet, can't be bothered.
@@ -77,7 +77,7 @@ Since this is likely to take a while, you may want to use nohup and log the outp
     nohup python ./era_downloader.py -v d era5_download/ -r Ghana -y 1,12 -x -4,5 &>era_dload.log&
 ```
 
-This downloads all the files (with names like `ERA5_Ghana.2002_12.nc`, where `Ghana` is the region name option, and we have year `2002` and month `12`). The files are stored under `era5_download/netcdf`, in the original NetCDF format. 
+This downloads all the files (with names like `ERA5_Ghana.2002_12.nc`, where `Ghana` is the region name option, and we have year `2002` and month `12`). The files are stored under `era5_download/netcdf`, in the original NetCDF format.
 
 The files contain *hourly* data at the native resolution for the variables listed above. We usually require *daily data*, and we move to GeoTIFF format (a more network friendly data format), by using the `data_downloader/era_to_tif.py` script. This script basically reuses the location from the previous one (`era5_download`) and works on an annual basis:
 

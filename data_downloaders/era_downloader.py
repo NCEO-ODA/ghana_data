@@ -32,12 +32,12 @@ LOG.propagate = False
 
 HELP_TEXT = """
 SYNOPSIS
-./era_downloader.py 
+./era_downloader.py
 DESCRIPTION
 A program to download Copernicus data.
 EXAMPLES
 ./era_downloader.py  -v \
-          
+
 
 EXIT STATUS
     No exit status yet, can't be bothered.
@@ -55,7 +55,7 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
 
     Function checks whether the file already exists before requesting
     the data, as requesting the data takes a while.
-    
+
     Parameters
     ----------
     month: int
@@ -84,7 +84,7 @@ def grab_era5(month, year, output_folder, region, mylat, mylon):
     if not output_nc_file.exists() or (0 <= delta_t.days <= 120):
 
         LOG.info(f"Downloading {year}-{month}")
-        #'80/-50/-25/0', # North, West, South, East.
+        # '80/-50/-25/0', # North, West, South, East.
         area = (
             f"{int(mylat[1]):d}/{int(mylon[0]):d}/"
             + f"{int(mylat[0]):d}/{int(mylon[1]):d}"

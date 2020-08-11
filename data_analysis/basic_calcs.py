@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Some remote data access routines to access the NCEO 
+"""Some remote data access routines to access the NCEO
 data storage on JASMIN."""
 import datetime as dt
 import subprocess
@@ -96,7 +96,7 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
             f'{product} isn\'t one of {["ERA", "TAMSAT", "MODIS"]}'
         )
     if product == "ERA":
-        if not variable in ERA5_VARIABLES:
+        if variable not in ERA5_VARIABLES:
             raise ValueError(
                 f"ERA5 product only has variables {ERA5_VARIABLES}"
             )
@@ -110,7 +110,7 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
         std = xr.open_rasterio(std_url, chunks={"band": 1})
 
     elif product == "TAMSAT":
-        if not variable in TAMSAT_VARIABLES:
+        if variable not in TAMSAT_VARIABLES:
             raise ValueError(
                 f"TAMSAT product only has variables {TAMSAT_VARIABLES}"
             )
@@ -120,7 +120,7 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
         std = xr.open_rasterio(std_url, chunks={"band": 1})
 
     elif product == "MODIS":
-        if not variable in MODIS_VARIABLES:
+        if variable not in MODIS_VARIABLES:
             raise ValueError(
                 f"MODIS product only has variables {MODIS_VARIABLES}"
             )
@@ -188,7 +188,7 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
     remote_url: str
         The parent URL. By default, the main NCEO ODA public
         HTML folder
-    
+
     Returns
     -------
     An all singing, all dancing xarray dataset
@@ -237,7 +237,7 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
     remote_url: str
         The parent URL. By default, the main NCEO ODA public
         HTML folder
-    
+
     Returns
     -------
     An all singing, all dancing xarray dataset
@@ -283,7 +283,7 @@ def calculate_climatology(
     """A simple function to calculate the mean and standard deviation for
     every `period` (e.g. month or whatever) on a pixel by pixel basis.
     The function allows you to specify a `first_year` and `last_year` for the
-    calculation. 
+    calculation.
 
     Parameters
     -----------

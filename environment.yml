@@ -11,7 +11,7 @@ dependencies:
  - gdal
  - libgdal
  - netcdf4
- - h5py 
+ - h5py
  - hdf5
  - scipy
  - matplotlib
