@@ -215,9 +215,9 @@ def start_era_download(
     with ThreadPoolExecutor(max_workers=8) as executor:
         for year in years:
             for month in months:
-              if year <= this_year and month <= this_month:
-                executor.submit(wrapper, month, year)
-                
+                if year <= this_year and month <= this_month:
+                    executor.submit(wrapper, month, year)
+
 
 if __name__ == "__main__":
     main()
