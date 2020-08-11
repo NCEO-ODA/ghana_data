@@ -250,6 +250,7 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
 
     def do_one_year(year):
         url = f"/vsicurl/{remote_url}/MCD15/{product}_{year}wgs84.tif"
+        
         retval = gdal.Info(url, allMetadata=True, format="json")
         dates = [
             pd.to_datetime(
@@ -349,9 +350,10 @@ def plot_z_score(
     logo=True,
 ):
     # The original parameters were changed to 3 degrees east and 11 degrees north
-    proj = ccrs.LambertAzimuthalEqualArea(
-        central_latitude=11, central_longitude=3
-    )
+    #proj = ccrs.LambertAzimuthalEqualArea(
+    #    central_latitude=11, central_longitude=3
+    #)
+    proj = ccrs.PlateCarree()
     sns.set_context("paper")
     sns.set_style("whitegrid")
     fig = plt.figure(figsize=(8, 12))
