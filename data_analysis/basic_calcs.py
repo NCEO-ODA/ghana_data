@@ -46,8 +46,9 @@ TAMSAT_VARIABLES = [
 ]
 
 
-def add_logo(logo="gssti_nceo_logo2.png", origin="upper",
-             x_o=0, y_o=0, alpha=0.5):
+def add_logo(
+    logo="gssti_nceo_logo2.png", origin="upper", x_o=0, y_o=0, alpha=0.5
+):
     """
     Function that adds GSSTI and NCEO logo to a figure
     :param fig: Figure object to add logo to
@@ -55,19 +56,20 @@ def add_logo(logo="gssti_nceo_logo2.png", origin="upper",
     :param y_o: yo position of logo on figure (float)
     :return: 'logo added' (str)
     """
-    logo_loc = (Path().cwd())/logo
+    logo_loc = (Path().cwd()) / logo
     if not logo_loc.exists():
         logo = [f for f in Path().cwd().rglob(f"**/{logo}")]
         logo = logo[0]
     else:
         logo = logo_loc.as_posix()
-                                                     
 
-    ax = plt.axes([.6,0.05, 0.4, 0.075], frameon=True)  # Change the numbers in this array to position your image [left, bottom, width, height])
+    ax = plt.axes(
+        [0.6, 0.05, 0.4, 0.075], frameon=True
+    )  # Change the numbers in this array to position your image [left, bottom, width, height])
     im = ax.imshow(mpimg.imread(logo))
     im.set_zorder(0)
-    ax.axis('off')  # get rid of the ticks and ticklabels
-    #fig.figimage(mpimg.imread(logo),
+    ax.axis("off")  # get rid of the ticks and ticklabels
+    # fig.figimage(mpimg.imread(logo),
     #             xo=x_o, yo=y_o)
 
 
@@ -250,7 +252,7 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
 
     def do_one_year(year):
         url = f"/vsicurl/{remote_url}/MCD15/{product}_{year}wgs84.tif"
-        
+
         retval = gdal.Info(url, allMetadata=True, format="json")
         dates = [
             pd.to_datetime(
@@ -258,7 +260,7 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
             )
             for d in retval["bands"]
         ]
-        
+
         ds = xr.open_rasterio(url, chunks={"band": 1, "x": 32, "y": 32})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
@@ -350,9 +352,9 @@ def plot_z_score(
     logo=True,
 ):
     # The original parameters were changed to 3 degrees east and 11 degrees north
-    #proj = ccrs.LambertAzimuthalEqualArea(
+    # proj = ccrs.LambertAzimuthalEqualArea(
     #    central_latitude=11, central_longitude=3
-    #)
+    # )
     proj = ccrs.PlateCarree()
     sns.set_context("paper")
     sns.set_style("whitegrid")
