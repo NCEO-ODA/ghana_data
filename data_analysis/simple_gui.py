@@ -33,7 +33,23 @@ def tamsat_anomaly(variable, lta_period):
     ds = get_tamsat_ds(variable)
     m, s = get_climatology("TAMSAT", variable, period=lta_period)
     z_score = calculate_z_score(ds, clim_mean=m, clim_std=s)
-    _ = plot_z_score(z_score, contour=True)
+    fig = plot_z_score(z_score, contour=True)
+    print(
+        f"Saving to tamsat_anom_{variable}_{periods[lta_period]}_zscore.pdf"
+    )
+    fig.savefig(
+        f"tamsat_anom_{variable}_{periods[lta_period]}_zscore.pdf",
+        dpi=175,
+        bbox_inches="tight",
+    )
+    fig.savefig(
+        f"tamsat_anom_{variable}_{periods[lta_period]}_zscore.png",
+        dpi=175,
+        bbox_inches="tight",
+    )
+    print(
+        f"Saving to tamsat_anom_{variable}_{periods[lta_period]}_zscore.png"
+    )
 
 
 def plot_era_anomaly():
@@ -52,7 +68,19 @@ def era_anomaly(variable, lta_period):
     ds = get_era5_ds(variable)
     m, s = get_climatology("ERA", variable, period=lta_period)
     z_score = calculate_z_score(ds, clim_mean=m, clim_std=s)
-    _ = plot_z_score(z_score, contour=True)
+    fig = plot_z_score(z_score, contour=True)
+    print(f"Saving to era5_anom_{variable}_{periods[lta_period]}_zscore.pdf")
+    fig.savefig(
+        f"era5_anom_{variable}_{periods[lta_period]}_zscore.pdf",
+        dpi=175,
+        bbox_inches="tight",
+    )
+    fig.savefig(
+        f"era5_anom_{variable}_{periods[lta_period]}_zscore.png",
+        dpi=175,
+        bbox_inches="tight",
+    )
+    print(f"Saving to era5_anom_{variable}_{periods[lta_period]}_zscore.png")
 
 
 def plot_modis_anomaly():
@@ -71,4 +99,16 @@ def modis_anomaly(variable, lta_period):
     ds = get_modis_ds(product=variable)
     m, s = get_climatology("MODIS", variable, period=lta_period)
     z_score = calculate_z_score(ds, clim_mean=m, clim_std=s)
-    _ = plot_z_score(z_score, contour=False)
+    fig = plot_z_score(z_score, contour=False)
+    print(f"Saving to modis_anom_{variable}_{periods[lta_period]}_zscore.pdf")
+    fig.savefig(
+        f"modis_anom_{variable}_{periods[lta_period]}_zscore.pdf",
+        dpi=175,
+        bbox_inches="tight",
+    )
+    fig.savefig(
+        f"modis_anom_{variable}_{periods[lta_period]}_zscore.png",
+        dpi=175,
+        bbox_inches="tight",
+    )
+    print(f"Saving to modis_anom_{variable}_{periods[lta_period]}_zscore.png")
