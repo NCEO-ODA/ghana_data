@@ -155,7 +155,7 @@ def get_tamsat_ds(variable, remote_url=JASMIN_URL):
         dates = [
             pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
         ]
-        ds = xr.open_rasterio(url, chunks={"x": 256, "y": 256})
+        ds = xr.open_rasterio(url, chunks={"x": 64, "y": 64})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
         return ds
@@ -206,7 +206,7 @@ def get_era5_ds(variable, remote_url=JASMIN_URL):
         dates = [
             pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
         ]
-        ds = xr.open_rasterio(url, chunks={"x": 256, "y": 256})
+        ds = xr.open_rasterio(url, chunks={"x": 64, "y": 64})
         ds = ds.rename({"band": "time"})
         ds = ds.assign_coords({"time": dates})
         return ds

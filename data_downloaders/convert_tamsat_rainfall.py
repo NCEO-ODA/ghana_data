@@ -1,4 +1,6 @@
-mport subprocess
+#!/usr/bin/env python
+
+import subprocess
 from pathlib import Path
 
 import gdal
@@ -8,8 +10,8 @@ import xarray as xr
 
 gdal.UseExceptions()
 
-#geoT = [-17.875, 0.25, 0, 37.375, 0.0, -0.25]
-#geoT = [-19.0125, 0.0375, 0, 38.025, 0.0, -0.0375]
+# geoT = [-17.875, 0.25, 0, 37.375, 0.0, -0.25]
+# geoT = [-19.0125, 0.0375, 0, 38.025, 0.0, -0.0375]
 geoT = [-18.875, 0.25, 0, 38.875, 0.0, -0.25]
 
 proj = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
@@ -25,7 +27,7 @@ for year in range(2000, 2020):
         "cdo",
         "cat",
         f"/gws/nopw/j04/tamsat/public/rfe/data_degraded/v3.1/daily/0.25/{year}/??/rfe{year}_??_??_0.25.v3.1.nc",
-        #f"/gws/nopw/j04/tamsat/public/rfe/data/v3.1/daily/{year}/??/rfe{year}_??_??.v3.1.nc",
+        # f"/gws/nopw/j04/tamsat/public/rfe/data/v3.1/daily/{year}/??/rfe{year}_??_??.v3.1.nc",
         # f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/tamsat_nceo_da_wb_v1p0p0_{year}????.nc",
         f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/{year}_rfe.nc",
     ]
@@ -56,9 +58,7 @@ for year in range(2000, 2020):
     ]
 
     print(f"Creating tiffs...")
-    for variable in [
-        "rfe_filled"
-    ]:
+    for variable in ["rfe_filled"]:
         if Path(
             f"/gws/nopw/j04/odanceo/public/soil_moisture/nc/GTiff/tamsat_{variable}_{year}.tif"
         ).exists():
@@ -77,6 +77,8 @@ for year in range(2000, 2020):
                 "TILED=YES",
                 "BIGTIFF=YES",
                 "PREDICTOR=1",
+                "BLOCKXSIZE=64",
+                "BLOCKYSIZE=64",
             ],
         )
         dst_ds.SetGeoTransform(geoT)
@@ -91,5 +93,3 @@ for year in range(2000, 2020):
             this_band.WriteArray(np.flipud(x))
             this_band.SetNoDataValue(-9999)
         dst_ds = None
-
-

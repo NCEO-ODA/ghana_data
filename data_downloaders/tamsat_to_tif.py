@@ -78,6 +78,8 @@ for year in range(2000, 2021):
                 "TILED=YES",
                 "BIGTIFF=YES",
                 "PREDICTOR=1",
+                "BLOCKXSIZE=64",
+                "BLOCKYSIZE=64",
             ],
         )
         dst_ds.SetGeoTransform(geoT)
@@ -108,6 +110,8 @@ for year in range(2000, 2021):
                 "TILED=YES",
                 "BIGTIFF=YES",
                 "PREDICTOR=1",
+                "BLOCKXSIZE=64",
+                "BLOCKYSIZE=64",
             ],
         )
         dst_ds.SetGeoTransform(geoT)
