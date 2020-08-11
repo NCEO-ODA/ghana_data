@@ -39,6 +39,8 @@ def write_tif(arr, var, year, loc, geoT, srs):
             "TILED=YES",
             "BIGTIFF=YES",
             "PREDICTOR=1",
+            "BLOCKXSIZE=32",
+            "BLOCKYSIZE=32"
         ],
     )
     ds.SetGeoTransform(geoT)
