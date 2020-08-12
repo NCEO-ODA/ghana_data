@@ -103,7 +103,7 @@ def plot_anomaly(product, variable, year, month, cmap, boundz, lta_period):
         fig = do_map(z_score, contour=True, cmap=cmap, vmin=vmin, vmax=vmax)
     else:
         fig = do_map(z_score, contour=False, cmap=cmap, vmin=vmin, vmax=vmax)
-    for ext in [".png", ".pdf"]:
+    for ext in ["png", "pdf"]:
         print(f"Saving to {product}_anom_{variable}_{lta_period}_zscore{ext}")
         fig.savefig(
             f"{product}_anom_{variable}_{lta_period}_zscore.{ext}",
@@ -132,11 +132,17 @@ def plot_field(product, variable, year, month, cmap, boundz):
     ds = get_one_year(product, variable, year)
 
     curr_month = (
-        ds.sel({"time": slice(f"{year}-01-01", f"{year}-12-31")})
-        .groupby("time.month")
-        .mean()
-    ).isel({"month": month})
-    vmin, vmax = curr_month.quantile([boundz[0] / 100, boundz[1] / 100])
+        (
+            ds.sel({"time": slice(f"{year}-01-01", f"{year}-12-31")})
+            .groupby("time.month")
+            .mean()
+        )
+        .isel({"month": month})
+        .chunks({"x": -1, "y": -1})
+    )
+    vmin, vmax = curr_month.quantile(
+        [boundz[0] / 100, boundz[1] / 100]
+    ).values
     if product in ["ERA5", "TAMSAT"]:
         fig = do_map(
             curr_month, contour=True, cmap=cmap, vmin=vmin, vmax=vmax
@@ -145,7 +151,7 @@ def plot_field(product, variable, year, month, cmap, boundz):
         fig = do_map(
             curr_month, contour=False, cmap=cmap, vmin=vmin, vmax=vmax
         )
-    for ext in [".png", ".pdf"]:
+    for ext in ["png", "pdf"]:
         print(f"Saving to {product}_{variable}{ext}")
         fig.savefig(
             f"{product}_{variable}.{ext}", dpi=175, bbox_inches="tight",
