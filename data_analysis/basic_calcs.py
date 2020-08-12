@@ -36,7 +36,7 @@ MODIS_VARIABLES = ["Fpar_500m", "Lai_500m", "FparLai_QC"]
 TAMSAT_VARIABLES = [
     "ecan_gb",
     "esoil_gb",
-    "precip",
+    "rfe_filled",
     "runoff",
     "smc_avail_top",
     "smcl_1",
