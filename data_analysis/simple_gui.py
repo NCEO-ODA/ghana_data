@@ -130,16 +130,20 @@ def plot_field(product, variable, year, month, cmap, boundz):
         What LTA period
     """
     ds = get_one_year(product, variable, year)
-
-    curr_month = (
-        (
-            ds.sel({"time": slice(f"{year}-01-01", f"{year}-12-31")})
-            .groupby("time.month")
-            .mean()
+    if product in ["precip", "runoff"]:
+        # This are aggregated monthly fluxes
+        curr_month = (
+            ds.resample(time="1MS")
+            .sum()
+            .sel({"time": f"{year}-{month:02d}-01"})
         )
-        .isel({"month": month})
-        .chunk({"x": -1, "y": -1})
-    )
+    else:
+        # This are averaged monthly fluxes
+        curr_month = (
+            ds.resample(time="1MS")
+            .mean()
+            .sel({"time": f"{year}-{month:02d}-01"})
+        )
     vmin, vmax = curr_month.quantile(
         [boundz[0] / 100, boundz[1] / 100]
     ).values
