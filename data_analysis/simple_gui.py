@@ -138,7 +138,7 @@ def plot_field(product, variable, year, month, cmap, boundz):
             .mean()
         )
         .isel({"month": month})
-        .chunks({"x": -1, "y": -1})
+        .chunk({"x": -1, "y": -1})
     )
     vmin, vmax = curr_month.quantile(
         [boundz[0] / 100, boundz[1] / 100]
