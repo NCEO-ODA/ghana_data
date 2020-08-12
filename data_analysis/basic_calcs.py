@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Some remote data access routines to access the NCEO
 data storage on JASMIN."""
+import calendar
 import datetime as dt
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -44,6 +45,54 @@ TAMSAT_VARIABLES = [
     "smcl_3",
     "smcl_4",
 ]
+
+
+def get_one_year(product, variable, year, remote_url=JASMIN_URL):
+    urls = {
+        "MODIS": f"/vsicurl/{remote_url}/MCD15/{variable}_{year}wgs84.tif",
+        "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
+        + f"nc/GTiff/tamsat_{variable}_{year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif",
+    }
+    url = urls[product]
+    g = gdal.Open(url, gdal.GA_ReadOnly)
+
+    n_bands = g.RasterCount
+
+    def to_dates(meta):
+        return pd.to_datetime(f'{year}/{meta["DoY"]}', format="%Y/%j")
+
+    def get_meta(band):
+        return g.GetRasterBand(band).GetMetadata()
+
+    dates = [to_dates(get_meta(i)) for i in range(1, n_bands + 1)]
+
+    ds = xr.open_rasterio(url, chunks={"x": 64, "y": 64})
+    ds = ds.rename({"band": "time"})
+    ds = ds.assign_coords({"time": dates})
+    return ds
+
+
+def check_dates(remote_url=JASMIN_URL):
+    year = dt.datetime.now().year
+    urls = {
+        "MODIS": f"/vsicurl/{remote_url}/MCD15/Fpar_500m_{year}wgs84.tif",
+        "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
+        + f"nc/GTiff/tamsat_runoff_{year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/ssrd_{year}.tif",
+    }
+    dates = {}
+    for product, url in urls.items():
+        g = gdal.Open(url, gdal.GA_ReadOnly)
+        n_bands = g.RasterCount
+        meta = g.GetRasterBand(n_bands).GetMetadata()
+        the_date = pd.to_datetime(f'{year}/{meta["DoY"]}', format="%Y/%j")
+        the_last_month = the_date.month
+        if the_date.day < calendar.monthrange(year, the_last_month)[1]:
+            the_last_month -= 1
+
+        dates[product] = the_last_month
+    return dates
 
 
 def add_logo(
@@ -91,6 +140,8 @@ def get_epsg_code(ds_name):
 
 
 def get_climatology(product, variable, url=JASMIN_URL, period="long"):
+    if product.upper() == "ERA5":
+        product = "ERA"
     if not product.upper() in ["ERA", "TAMSAT", "MODIS"]:
         raise ValueError(
             f'{product} isn\'t one of {["ERA", "TAMSAT", "MODIS"]}'
@@ -342,33 +393,28 @@ def calculate_z_score(
     return z_score
 
 
-def plot_z_score(
-    ds,
-    cmap=plt.cm.RdBu,
+def do_map(
+    field,
     contour=True,
-    vmin=None,
-    vmax=None,
-    levels=np.linspace(-2.5, 2.5, 19),
-    logo=True,
+    with_logo=True,
+    cmap="cividis",
+    vmin=-3,
+    vmax=3,
+    n_levels=19,
 ):
-    # The original parameters were changed to 3 degrees east and 11 degrees north
-    # proj = ccrs.LambertAzimuthalEqualArea(
-    #    central_latitude=11, central_longitude=3
-    # )
-    proj = ccrs.PlateCarree()
     sns.set_context("paper")
     sns.set_style("whitegrid")
     fig = plt.figure(figsize=(8, 12))
-    ax = plt.axes(projection=proj)
-    # create colorbar
-    cmap = plt.cm.get_cmap(cmap)
+    cmap = plt.get_cmap(cmap)
+    levels = np.linspace(vmin, vmax, n_levels)
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
     if contour:
         norm = colors.BoundaryNorm(levels, cmap.N)
         # plot either contour of pcolormesh map
         im = ax.contourf(
-            ds.coords["x"],
-            ds.coords["y"],
-            ds.data,
+            field.coords["x"],
+            field.coords["y"],
+            field.data,
             levels=levels,
             norm=norm,
             transform=ccrs.PlateCarree(),
@@ -378,21 +424,23 @@ def plot_z_score(
         )
     else:
         im = ax.pcolormesh(
-            ds.coords["x"],
-            ds.coords["y"],
-            ds.data,
+            field.coords["x"],
+            field.coords["y"],
+            field.data,
             transform=ccrs.PlateCarree(),
-            # norm=norm,
-            # vmin=vmin, vmax=vmax,
+            #            norm=norm,
+            vmin=vmin,
+            vmax=vmax,
             cmap=cmap,
         )
-    ax.coastlines(resolution="10m")
+    ax.gridlines()
+    ax.coastlines(resolution="50m")
     ax.add_feature(cfeature.STATES, edgecolor="gray", alpha=0.3)
     ax.add_feature(cfeature.BORDERS)
     lake = cfeature.NaturalEarthFeature(
         category="physical",
         name="lakes",
-        scale="10m",
+        scale="50m",
         facecolor="none",
         edgecolor="black",
     )
@@ -404,6 +452,7 @@ def plot_z_score(
     cbar = fig.colorbar(im, cax=cax, extend="max")
     cbar.set_label("anomaly", fontsize=12)
 
+    ax.set_extent([-3.5, 1.25, 4.5, 11.7], ccrs.PlateCarree())
     lon_formatter = LongitudeFormatter(zero_direction_label=False)
     ax.xaxis.set_major_formatter(lon_formatter)
     lat_formatter = LatitudeFormatter()
@@ -420,7 +469,6 @@ def plot_z_score(
     gl.right_labels = False
     gl.xformatter = LONGITUDE_FORMATTER
     gl.yformatter = LATITUDE_FORMATTER
-    ax.set_extent([-3.5, 1.25, 4.5, 11.7], ccrs.PlateCarree())
-    if logo:
+    if with_logo:
         add_logo()
     return fig
