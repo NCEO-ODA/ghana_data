@@ -106,9 +106,9 @@ def get_one_year(product, variable, year, remote_url=JASMIN_URL):
     ds = ds.assign_coords({"time": dates})
     # Scale MODIS products
     if variable == "Fpar_500m":
-        ds = ds.where(ds <= 100, ds / 100.0, other=np.nan)
+        ds = ds.where(ds <= 100, ds / 100.0, np.nan)
     elif variable == "Lai_500m":
-        ds = ds.where(ds <= 10, ds / 100.0, other=np.nan)
+        ds = ds.where(ds <= 10, ds / 100.0, np.nan)
     return ds
 
 
