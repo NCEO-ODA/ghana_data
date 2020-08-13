@@ -104,6 +104,11 @@ def get_one_year(product, variable, year, remote_url=JASMIN_URL):
     ds = xr.open_rasterio(url, chunks={"x": 64, "y": 64})
     ds = ds.rename({"band": "time"})
     ds = ds.assign_coords({"time": dates})
+    # Scale MODIS products
+    if variable == "Fpar_500m":
+        ds = ds.where(ds <= 100, ds / 100.0, other=np.nan)
+    elif variable == "Lai_500m":
+        ds = ds.where(ds <= 10, ds / 100.0, other=np.nan)
     return ds
 
 
