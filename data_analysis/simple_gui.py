@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""A simple Jupyter notebook GUI to do spatial plots over Ghana.
+"""
 import datetime as dt
 
 import ipywidgets.widgets as widgets
@@ -56,6 +58,8 @@ def plot_anomaly(product, variable, year, month, cmap, boundz, lta_period):
         One of the supported products: `TAMSAT`, `ERA5` or `MODIS`.
     variable : str
         A reasonable variable name
+    year: int
+        The year... D'oh
     month: int
         The month in the current year to use for calculations
     cmap : str
@@ -96,6 +100,10 @@ def plot_field(product, variable, year, month, cmap, boundz):
         One of the supported products: `TAMSAT`, `ERA5` or `MODIS`.
     variable : str
         A reasonable variable name
+    year: int
+        The year... D'oh
+    month: int
+        The month in the current year to use for calculations
     cmap : str
         A matplotlib colormap name
     boundz : iter
