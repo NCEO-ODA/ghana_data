@@ -98,6 +98,13 @@ def scan_current_files(data_loc, curr_year):
         return last_time
 
 
+def scan_hdf_files(data_loc, curr_year):
+    loc = Path(data_loc) / "hdfs"
+    hdfs = sorted([f for f in loc.glob(f"MCD15A2H*.A{curr_year}*.hdf")])
+    doy = int(hdfs[-1].name.split(".")[1][-3:])
+    return doy
+
+
 @click.command()
 @click.option(
     "--location",
@@ -129,10 +136,10 @@ def main(location, product, layers, username, password):
     if dt.datetime.strptime(f"{current_year}/{last_time}", "%Y/%j") <= today:
         download_nasa(last_time, current_year)
     # Scan local files to see what's the latest we've processed
-    last_time = scan_current_files(PROCESS_LOCATION, current_year)
+    last_doy = scan_hdf_files(PROCESS_LOCATION, current_year)
     do_tifs(
         current_year,
-        last_time,
+        last_doy,
         folder=PROCESS_LOCATION,
         product=product,
         layers=layers,
