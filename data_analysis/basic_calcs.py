@@ -247,13 +247,13 @@ def calculate_climatology(
     if variable in ["precip", "rfe_filled", "runoff"]:
         monthly_ds = (
             ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
-            .resample("1MS")
+            .resample({"time": "1MS"})
             .sum()
         )
     else:
         monthly_ds = (
             ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
-            .resample("1MS")
+            .resample({"time": "1MS"})
             .mean()
         )
     clim_mean = monthly_ds.groupby(period).mean("time")
