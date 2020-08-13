@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
 import gdal
+import numpy as np
 from basic_calcs import (
     ERA5_VARIABLES,
     TAMSAT_VARIABLES,
@@ -103,6 +103,10 @@ if __name__ == "__main__":
         nx, ny = g.RasterXSize, g.RasterYSize
         for variable in ["Lai_500m", "Fpar_500m"]:
             ds = get_all_years("MODIS", variable)
+            if variable == "Lai_500m":
+                ds = ds.where(ds <= 100, ds / 10.0, other=np.nan)
+            else:
+                ds = ds.where(ds <= 100, ds / 100.0, other=np.nan)
             for k, v in clim_periods.items():
                 print(variable, k)
                 m, s = calculate_climatology(
