@@ -337,13 +337,13 @@ def do_map(
             cmap=cmap,
         )
     ax.gridlines()
-    ax.coastlines(resolution="50m")
+    ax.coastlines(resolution="110m")
     ax.add_feature(cfeature.STATES, edgecolor="gray", alpha=0.3)
     ax.add_feature(cfeature.BORDERS)
     lake = cfeature.NaturalEarthFeature(
         category="physical",
         name="lakes",
-        scale="50m",
+        scale="110m",
         facecolor="none",
         edgecolor="black",
     )
