@@ -229,6 +229,9 @@ def get_modis_data(
     # Get all the available dates in the NASA archive...
     LOG.debug("Getting available dates from NASA server...")
     the_dates = get_available_dates(url, start_date, end_date=end_date)
+    if not the_dates:
+         LOG.info("No files to download!")
+         return None
     LOG.debug(f"{len(the_dates):d} available...")
     LOG.debug(f"First:{str(the_dates[0]):s}")
     LOG.debug(f"Last:{str(the_dates[-1]):s}")
