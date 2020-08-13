@@ -6,7 +6,6 @@ from pathlib import Path
 
 import click
 import gdal
-
 from modis_downloader import get_modis_data
 from to_tif import do_tifs
 

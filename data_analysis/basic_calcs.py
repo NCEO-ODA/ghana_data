@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-"""Some remote data access routines to access the NCEO 
+"""Some remote data access routines to access the NCEO
 data storage on JASMIN."""
+import calendar
 import datetime as dt
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -46,8 +47,91 @@ TAMSAT_VARIABLES = [
 ]
 
 
-def add_logo(logo="gssti_nceo_logo2.png", origin="upper",
-             x_o=0, y_o=0, alpha=0.5):
+def get_all_years(
+    product,
+    variable,
+    first_year=2002,
+    last_year=None,
+    n_workers=8,
+    remote_url=JASMIN_URL,
+):
+
+    if last_year is None:
+        last_year = dt.datetime.today().year
+    urls = {
+        "MODIS": f"/vsicurl/{remote_url}/MCD15/{variable}_{first_year}wgs84.tif",
+        "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
+        + f"nc/GTiff/tamsat_{variable}_{first_year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{first_year}.tif",
+    }
+    epsg = get_epsg_code(urls[product])
+
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        years = [y for y in range(first_year, last_year + 1)]
+        arrays = list(
+            tqdm(
+                executor.map(
+                    lambda year: get_one_year(product, variable, year), years
+                ),
+                total=len(years),
+            )
+        )
+    ds = xr.concat(arrays, dim="time")
+    ds.attrs["epsg"] = epsg
+    return ds
+
+
+def get_one_year(product, variable, year, remote_url=JASMIN_URL):
+    urls = {
+        "MODIS": f"/vsicurl/{remote_url}/MCD15/{variable}_{year}wgs84.tif",
+        "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
+        + f"nc/GTiff/tamsat_{variable}_{year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif",
+    }
+    url = urls[product]
+    g = gdal.Open(url, gdal.GA_ReadOnly)
+
+    n_bands = g.RasterCount
+
+    def to_dates(meta):
+        return pd.to_datetime(f'{year}/{meta["DoY"]}', format="%Y/%j")
+
+    def get_meta(band):
+        return g.GetRasterBand(band).GetMetadata()
+
+    dates = [to_dates(get_meta(i)) for i in range(1, n_bands + 1)]
+
+    ds = xr.open_rasterio(url, chunks={"x": 64, "y": 64})
+    ds = ds.rename({"band": "time"})
+    ds = ds.assign_coords({"time": dates})
+    return ds
+
+
+def check_dates(remote_url=JASMIN_URL):
+    year = dt.datetime.now().year
+    urls = {
+        "MODIS": f"/vsicurl/{remote_url}/MCD15/Fpar_500m_{year}wgs84.tif",
+        "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
+        + f"nc/GTiff/tamsat_runoff_{year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/ssrd_{year}.tif",
+    }
+    dates = {}
+    for product, url in urls.items():
+        g = gdal.Open(url, gdal.GA_ReadOnly)
+        n_bands = g.RasterCount
+        meta = g.GetRasterBand(n_bands).GetMetadata()
+        the_date = pd.to_datetime(f'{year}/{meta["DoY"]}', format="%Y/%j")
+        the_last_month = the_date.month
+        if the_date.day < calendar.monthrange(year, the_last_month)[1]:
+            the_last_month -= 1
+
+        dates[product] = the_last_month
+    return dates
+
+
+def add_logo(
+    logo="gssti_nceo_logo2.png", origin="upper", x_o=0, y_o=0, alpha=0.5
+):
     """
     Function that adds GSSTI and NCEO logo to a figure
     :param fig: Figure object to add logo to
@@ -55,19 +139,20 @@ def add_logo(logo="gssti_nceo_logo2.png", origin="upper",
     :param y_o: yo position of logo on figure (float)
     :return: 'logo added' (str)
     """
-    logo_loc = (Path().cwd())/logo
+    logo_loc = (Path().cwd()) / logo
     if not logo_loc.exists():
         logo = [f for f in Path().cwd().rglob(f"**/{logo}")]
         logo = logo[0]
     else:
         logo = logo_loc.as_posix()
-                                                     
 
-    ax = plt.axes([.6,0.05, 0.4, 0.075], frameon=True)  # Change the numbers in this array to position your image [left, bottom, width, height])
+    ax = plt.axes(
+        [0.6, 0.05, 0.4, 0.075], frameon=True
+    )  # Change the numbers in this array to position your image [left, bottom, width, height])
     im = ax.imshow(mpimg.imread(logo))
     im.set_zorder(0)
-    ax.axis('off')  # get rid of the ticks and ticklabels
-    #fig.figimage(mpimg.imread(logo),
+    ax.axis("off")  # get rid of the ticks and ticklabels
+    # fig.figimage(mpimg.imread(logo),
     #             xo=x_o, yo=y_o)
 
 
@@ -89,12 +174,14 @@ def get_epsg_code(ds_name):
 
 
 def get_climatology(product, variable, url=JASMIN_URL, period="long"):
+    if product.upper() == "ERA5":
+        product = "ERA"
     if not product.upper() in ["ERA", "TAMSAT", "MODIS"]:
         raise ValueError(
             f'{product} isn\'t one of {["ERA", "TAMSAT", "MODIS"]}'
         )
     if product == "ERA":
-        if not variable in ERA5_VARIABLES:
+        if variable not in ERA5_VARIABLES:
             raise ValueError(
                 f"ERA5 product only has variables {ERA5_VARIABLES}"
             )
@@ -108,7 +195,7 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
         std = xr.open_rasterio(std_url, chunks={"band": 1})
 
     elif product == "TAMSAT":
-        if not variable in TAMSAT_VARIABLES:
+        if variable not in TAMSAT_VARIABLES:
             raise ValueError(
                 f"TAMSAT product only has variables {TAMSAT_VARIABLES}"
             )
@@ -118,7 +205,7 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
         std = xr.open_rasterio(std_url, chunks={"band": 1})
 
     elif product == "MODIS":
-        if not variable in MODIS_VARIABLES:
+        if variable not in MODIS_VARIABLES:
             raise ValueError(
                 f"MODIS product only has variables {MODIS_VARIABLES}"
             )
@@ -136,152 +223,13 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
     return mean, std
 
 
-def get_tamsat_ds(variable, remote_url=JASMIN_URL):
-    assert (
-        variable in TAMSAT_VARIABLES
-    ), f"{variable} not one of {TAMSAT_VARIABLES}"
-    today = dt.datetime.now()
-
-    arrays = []
-    sample_url = f"/vsicurl/{remote_url}/soil_moisture/nc/GTiff/tamsat_{variable}_2004.tif"
-    epsg = get_epsg_code(sample_url)
-
-    def do_one_year(year):
-        url = (
-            f"/vsicurl/{remote_url}/soil_moisture/"
-            + f"nc/GTiff/tamsat_{variable}_{year}.tif"
-        )
-        retval = gdal.Info(url, allMetadata=True, format="json")
-        dates = [
-            pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
-        ]
-        ds = xr.open_rasterio(url, chunks={"x": 64, "y": 64})
-        ds = ds.rename({"band": "time"})
-        ds = ds.assign_coords({"time": dates})
-        return ds
-
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        years = [y for y in range(2002, today.year + 1)]
-        arrays = list(
-            tqdm(executor.map(do_one_year, years), total=len(years))
-        )
-
-    ds = xr.concat(arrays, dim="time")
-    ds.attrs["epsg"] = epsg
-
-    return ds
-
-
-def get_era5_ds(variable, remote_url=JASMIN_URL):
-    """Return an xarray dataset with a ERA5 variable.
-    Function takes care of getting the timestamps
-    sorted, and selects all available time steps.
-
-    Parameters
-    ----------
-    variable: str
-        The variable of interest. Must be one of `hum`,
-        `precip`, `ssrd`, `t2m_max`, `t2m_mean, `t2m_min
-        or `wspd`.
-    remote_url: str
-        The parent URL. By default, the main NCEO ODA public
-        HTML folder
-    
-    Returns
-    -------
-    An all singing, all dancing xarray dataset
-    """
-    assert (
-        variable in ERA5_VARIABLES
-    ), f"{variable} not one of {ERA5_VARIABLES}"
-    today = dt.datetime.now()
-
-    arrays = []
-    sample_url = f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_2004.tif"
-    epsg = get_epsg_code(sample_url)
-
-    def do_one_year(year):
-        url = f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif"
-        retval = gdal.Info(url, allMetadata=True, format="json")
-        dates = [
-            pd.to_datetime(d["metadata"][""]["Date"]) for d in retval["bands"]
-        ]
-        ds = xr.open_rasterio(url, chunks={"x": 64, "y": 64})
-        ds = ds.rename({"band": "time"})
-        ds = ds.assign_coords({"time": dates})
-        return ds
-
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        years = [y for y in range(2002, today.year + 1)]
-        arrays = list(
-            tqdm(executor.map(do_one_year, years), total=len(years))
-        )
-
-    ds = xr.concat(arrays, dim="time")
-    ds.attrs["epsg"] = epsg
-    return ds
-
-
-def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
-    """Return an xarray dataset with a MODIS variable.
-    Function takes care of getting the timestamps
-    sorted, and selects all available time steps.
-
-    Parameters
-    ----------
-    variable: str
-        The variable of interest. Must be one of "Fpar_500m",
-        `Lai_500m` or `FparLai_QC`
-    remote_url: str
-        The parent URL. By default, the main NCEO ODA public
-        HTML folder
-    
-    Returns
-    -------
-    An all singing, all dancing xarray dataset
-    TODO: We should really apply the QC layer
-    """
-    assert (
-        product in MODIS_VARIABLES
-    ), f"{product} is not one of {MODIS_VARIABLES}"
-    today = dt.datetime.now()
-    sample_url = f"/vsicurl/{remote_url}/MCD15/{product}_2004wgs84.tif"
-    epsg = get_epsg_code(sample_url)
-
-    def do_one_year(year):
-        url = f"/vsicurl/{remote_url}/MCD15/{product}_{year}wgs84.tif"
-        
-        retval = gdal.Info(url, allMetadata=True, format="json")
-        dates = [
-            pd.to_datetime(
-                f"{year}/{d['metadata']['']['DoY']}", format="%Y/%j"
-            )
-            for d in retval["bands"]
-        ]
-        
-        ds = xr.open_rasterio(url, chunks={"band": 1, "x": 32, "y": 32})
-        ds = ds.rename({"band": "time"})
-        ds = ds.assign_coords({"time": dates})
-        return ds
-
-    with ThreadPoolExecutor(max_workers=n_workers) as executor:
-        years = [y for y in range(2002, today.year + 1)]
-        arrays = list(
-            tqdm(executor.map(do_one_year, years), total=len(years))
-        )
-
-    ds = xr.concat(arrays, dim="time")
-    ds.attrs["epsg"] = epsg
-    return ds
-
-
 def calculate_climatology(
-    ds, first_year=2002, period="time.month", last_year=None
+    ds, variable, first_year=2002, period="time.month", last_year=None
 ):
     """A simple function to calculate the mean and standard deviation for
     every `period` (e.g. month or whatever) on a pixel by pixel basis.
     The function allows you to specify a `first_year` and `last_year` for the
-    calculation. 
+    calculation.
 
     Parameters
     -----------
@@ -296,17 +244,20 @@ def calculate_climatology(
     """
     if last_year is None:
         last_year = dt.datetime.now().year
-
-    clim_mean = (
-        ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
-        .groupby(period)
-        .mean("time")
-    )
-    clim_std = (
-        ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
-        .groupby(period)
-        .std("time")
-    )
+    if variable in ["precip", "rfe_filled", "runoff"]:
+        monthly_ds = (
+            ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
+            .resample("1MS")
+            .sum()
+        )
+    else:
+        monthly_ds = (
+            ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
+            .resample("1MS")
+            .mean()
+        )
+    clim_mean = monthly_ds.groupby(period).mean("time")
+    clim_std = monthly_ds.groupby(period).std("time")
     return clim_mean, clim_std
 
 
@@ -340,33 +291,28 @@ def calculate_z_score(
     return z_score
 
 
-def plot_z_score(
-    ds,
-    cmap=plt.cm.RdBu,
+def do_map(
+    field,
     contour=True,
-    vmin=None,
-    vmax=None,
-    levels=np.linspace(-2.5, 2.5, 19),
-    logo=True,
+    with_logo=True,
+    cmap="cividis",
+    vmin=-3,
+    vmax=3,
+    n_levels=19,
 ):
-    # The original parameters were changed to 3 degrees east and 11 degrees north
-    #proj = ccrs.LambertAzimuthalEqualArea(
-    #    central_latitude=11, central_longitude=3
-    #)
-    proj = ccrs.PlateCarree()
     sns.set_context("paper")
     sns.set_style("whitegrid")
     fig = plt.figure(figsize=(8, 12))
-    ax = plt.axes(projection=proj)
-    # create colorbar
-    cmap = plt.cm.get_cmap(cmap)
+    cmap = plt.get_cmap(cmap)
+    levels = np.linspace(vmin, vmax, n_levels)
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
     if contour:
         norm = colors.BoundaryNorm(levels, cmap.N)
         # plot either contour of pcolormesh map
         im = ax.contourf(
-            ds.coords["x"],
-            ds.coords["y"],
-            ds.data,
+            field.coords["x"],
+            field.coords["y"],
+            field.data,
             levels=levels,
             norm=norm,
             transform=ccrs.PlateCarree(),
@@ -376,21 +322,23 @@ def plot_z_score(
         )
     else:
         im = ax.pcolormesh(
-            ds.coords["x"],
-            ds.coords["y"],
-            ds.data,
+            field.coords["x"],
+            field.coords["y"],
+            field.data,
             transform=ccrs.PlateCarree(),
-            # norm=norm,
-            # vmin=vmin, vmax=vmax,
+            #            norm=norm,
+            vmin=vmin,
+            vmax=vmax,
             cmap=cmap,
         )
-    ax.coastlines(resolution="10m")
+    ax.gridlines()
+    ax.coastlines(resolution="50m")
     ax.add_feature(cfeature.STATES, edgecolor="gray", alpha=0.3)
     ax.add_feature(cfeature.BORDERS)
     lake = cfeature.NaturalEarthFeature(
         category="physical",
         name="lakes",
-        scale="10m",
+        scale="50m",
         facecolor="none",
         edgecolor="black",
     )
@@ -402,6 +350,7 @@ def plot_z_score(
     cbar = fig.colorbar(im, cax=cax, extend="max")
     cbar.set_label("anomaly", fontsize=12)
 
+    ax.set_extent([-3.5, 1.25, 4.5, 11.7], ccrs.PlateCarree())
     lon_formatter = LongitudeFormatter(zero_direction_label=False)
     ax.xaxis.set_major_formatter(lon_formatter)
     lat_formatter = LatitudeFormatter()
@@ -418,7 +367,6 @@ def plot_z_score(
     gl.right_labels = False
     gl.xformatter = LONGITUDE_FORMATTER
     gl.yformatter = LATITUDE_FORMATTER
-    ax.set_extent([-3.5, 1.25, 4.5, 11.7], ccrs.PlateCarree())
-    if logo:
+    if with_logo:
         add_logo()
     return fig

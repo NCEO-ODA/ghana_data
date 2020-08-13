@@ -36,7 +36,7 @@ __email__ = "j.gomez-dans@ucl.ac.uk"
 
 HELP_TEXT = """
 SYNOPSIS
-./modis_downloader.py 
+./modis_downloader.py
 DESCRIPTION
 A program to download MODIS data from the USGS website using the HTTP
 transport. This program is able to download daily, monthly, 8-daily, etc
@@ -384,7 +384,7 @@ def main():
     elif options.product.find("MCD") >= 0:
         platform = "MOTA"
     else:
-        raise ValueError(f"Your product name should be something")
+        raise ValueError("Your product name should be something")
     tiles = options.tiles.split(",")
     start_date = datetime.datetime(
         *list(map(int, options.start_date.split("-")))
@@ -395,7 +395,7 @@ def main():
         )
     LOG.info("MODIS downloader by J Gomez-Dans...")
     LOG.info("Starting downloading")
-    dload_files = get_modis_data(
+    _ = get_modis_data(
         options.username,
         options.password,
         platform,
@@ -411,7 +411,7 @@ def main():
 if __name__ == "__main__":
     import datetime as dt
 
-    from modis_downloader import get_modis_data
+    #    from modis_downloader import get_modis_data
 
     username = "gomezdansj"
     password = "GeogG1222016"
