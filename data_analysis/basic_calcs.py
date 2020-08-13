@@ -47,6 +47,40 @@ TAMSAT_VARIABLES = [
 ]
 
 
+def get_all_years(
+    product,
+    variable,
+    first_year=2002,
+    last_year=None,
+    n_workers=8,
+    remote_url=JASMIN_URL,
+):
+
+    if last_year is None:
+        last_year = dt.datetime.today().year
+    urls = {
+        "MODIS": f"/vsicurl/{remote_url}/MCD15/{variable}_{first_year}wgs84.tif",
+        "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
+        + f"nc/GTiff/tamsat_{variable}_{first_year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{first_year}.tif",
+    }
+    epsg = get_epsg_code(urls[product])
+
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        years = [y for y in range(first_year, last_year + 1)]
+        arrays = list(
+            tqdm(
+                executor.map(
+                    lambda year: get_one_year(product, variable, year), years
+                ),
+                total=len(years),
+            )
+        )
+    ds = xr.concat(arrays, dim="time")
+    ds.attrs["epsg"] = epsg
+    return ds
+
+
 def get_one_year(product, variable, year, remote_url=JASMIN_URL):
     urls = {
         "MODIS": f"/vsicurl/{remote_url}/MCD15/{variable}_{year}wgs84.tif",
@@ -329,7 +363,7 @@ def get_modis_ds(remote_url=JASMIN_URL, product="Fpar_500m", n_workers=8):
 
 
 def calculate_climatology(
-    ds, first_year=2002, period="time.month", last_year=None
+    ds, variable, first_year=2002, period="time.month", last_year=None
 ):
     """A simple function to calculate the mean and standard deviation for
     every `period` (e.g. month or whatever) on a pixel by pixel basis.
@@ -349,17 +383,20 @@ def calculate_climatology(
     """
     if last_year is None:
         last_year = dt.datetime.now().year
-
-    clim_mean = (
-        ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
-        .groupby(period)
-        .mean("time")
-    )
-    clim_std = (
-        ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
-        .groupby(period)
-        .std("time")
-    )
+    if variable in ["precip", "rfe_filled", "runoff"]:
+        monthly_ds = (
+            ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
+            .resample("1MS")
+            .sum()
+        )
+    else:
+        monthly_ds = (
+            ds.sel(time=slice(f"{first_year}-01-01", f"{last_year}-01-01"))
+            .resample("1MS")
+            .mean()
+        )
+    clim_mean = monthly_ds.groupby(period).mean("time")
+    clim_std = monthly_ds.groupby(period).std("time")
     return clim_mean, clim_std
 
 
