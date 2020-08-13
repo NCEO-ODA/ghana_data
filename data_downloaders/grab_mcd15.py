@@ -146,7 +146,7 @@ def main(location, product, layers, username, password):
     )
     # Convert to WGS84 dodgy grid
     data_loc = Path(PROCESS_LOCATION)
-    for layer in layers:
+    for layer in ["Lai_500m", "Fpar_500m"]:
         src_fname = data_loc / f"{layer}_{current_year}.tif"
         dst_fname = data_loc / f"{layer}_{current_year}wgs84.tif"
         dst_fname.unlink()
