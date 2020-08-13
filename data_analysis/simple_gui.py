@@ -126,9 +126,11 @@ def plot_field(product, variable, year, month, cmap, boundz):
             .mean()
             .sel({"time": f"{year}-{month:02d}-01"})
         )
-    vmin, vmax = curr_month.quantile(
-        [boundz[0] / 100, boundz[1] / 100]
-    ).values
+    vmin, vmax = (
+        curr_month.chunk({"x": -1, "y": -1})
+        .quantile([boundz[0] / 100, boundz[1] / 100])
+        .values
+    )
     if product in ["ERA5", "TAMSAT"]:
         fig = do_map(
             curr_month, contour=True, cmap=cmap, vmin=vmin, vmax=vmax
