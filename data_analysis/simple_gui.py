@@ -41,37 +41,11 @@ uniform_cmaps = ["viridis", "plasma", "inferno", "magma", "cividis"]
 
 #################################################################
 ###
-###         FIELD PLOTTING FUNCTIONS
+###         PLOTTING FUNCTIONS
 ###
 #################################################################
-# def tamsat_field(variable, cmap, vmin, vmax, lta_period):
-#     ds = get_tamsat_ds(variable)
-#     vmin = ds[variable]
-#     fig = (z_score, contour=True, cmap=cmap,
-#                        vmin=vmin, vmax=vmax)
-#     print(
-#         f"Saving to tamsat_anom_{variable}_{periods[lta_period]}_zscore.pdf"
-#     )
-#     fig.savefig(
-#         f"tamsat_anom_{variable}_{periods[lta_period]}_zscore.pdf",
-#         dpi=175,
-#         bbox_inches="tight",
-#     )
-#     fig.savefig(
-#         f"tamsat_anom_{variable}_{periods[lta_period]}_zscore.png",
-#         dpi=175,
-#         bbox_inches="tight",
-#     )
-#     print(
-#         f"Saving to tamsat_anom_{variable}_{periods[lta_period]}_zscore.png"
-#     )
 
 
-#################################################################
-###
-###         ANOMALY PLOTTING FUNCTIONS
-###
-#################################################################
 def plot_anomaly(product, variable, year, month, cmap, boundz, lta_period):
     """Do an anomaly (e.g. z-score) plot of a variable in a given
     product.
@@ -130,7 +104,7 @@ def plot_field(product, variable, year, month, cmap, boundz):
         What LTA period
     """
     ds = get_one_year(product, variable, year)
-    if product in ["precip", "runoff"]:
+    if product in ["precip", "runoff", "rfe_filled"]:
         # This are aggregated monthly fluxes
         curr_month = (
             ds.resample(time="1MS")
@@ -160,6 +134,13 @@ def plot_field(product, variable, year, month, cmap, boundz):
         fig.savefig(
             f"{product}_{variable}.{ext}", dpi=175, bbox_inches="tight",
         )
+
+
+#################################################################
+###
+###         GUI FUNCTION
+###
+#################################################################
 
 
 def do_plots_gui():
