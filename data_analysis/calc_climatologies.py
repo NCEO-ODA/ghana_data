@@ -104,10 +104,6 @@ if __name__ == "__main__":
         nx, ny = g.RasterXSize, g.RasterYSize
         for variable in ["Lai_500m", "Fpar_500m"]:
             ds = get_all_years("MODIS", variable)
-            if variable == "Lai_500m":
-                ds = xr.where(ds <= 100, ds / 10.0, np.nan)
-            else:
-                ds = xr.where(ds <= 100, ds / 100.0, np.nan)
             for k, v in clim_periods.items():
                 print(variable, k)
                 m, s = calculate_climatology(
