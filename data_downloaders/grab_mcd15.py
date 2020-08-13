@@ -144,6 +144,27 @@ def main(location, product, layers, username, password):
         product=product,
         layers=layers,
     )
+    # Convert to WGS84 dodgy grid
+    data_loc = Path(PROCESS_LOCATION)
+    for layer in layers:
+        src_fname = data_loc / f"{layer}_{current_year}.tif"
+        dst_fname = data_loc / f"{layer}_{current_year}wgs84.tif"
+        dst_fname.unlink()
+        _ = gdal.Warp(
+            dst_fname.as_posix(),
+            src_fname.as_posix(),
+            format="GTiff",
+            dstSRS="EPSG:4326",
+            xRes=0.02,
+            yRes=0.02,
+            outputBounds=[-3.5, 4.5, 1.1, 12.0],
+            creationOptions=[
+                "COMPRESS=DEFLATE",
+                "TILED=YES",
+                "BIGTIFF=YES",
+                "PREDICTOR=1",
+            ],
+        )
 
 
 if __name__ == "__main__":
