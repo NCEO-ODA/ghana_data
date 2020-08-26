@@ -2,6 +2,7 @@
 """[summary]
 """
 import struct
+from pathlib import Path
 from textwrap import dedent
 
 import gdal
@@ -51,7 +52,10 @@ def get_era5_data(lon, lat, year):
     return data_stacks
 
 
-def write_cabo_file(site_name, lon, lat, year, c1=-0.18, c2=-0.55):
+def write_cabo_file(
+    site_name, lon, lat, year, dest_folder=".", c1=-0.18, c2=-0.55
+):
+    cabo_file = Path(dest_folder) / f"{site_name}_{year}.txt"
     elev = retrieve_pixel_value(lon, lat, DEM_FILE)
     hdr_chunk = f"""\
     *---------------------------------------------------
@@ -88,4 +92,16 @@ def write_cabo_file(site_name, lon, lat, year, c1=-0.18, c2=-0.55):
             "precip",
         ]
     ]
-    return variables
+    station_number = 1
+    with cabo_file.open("w") as fp:
+        fp.write(hdr_chunk)
+        for d in range(data_stack["ssrd"].shape[0]):
+            fp.write(
+                f"{station_number:d}\t{year:d}\t{d+1:d}\t"
+                + f"{round(variables[0][d]):5.1f}\t"
+                + f"{round(variables[1][d]*10/10):5.1f}\t"
+                + f"{round(variables[2][d]*10/10):5.1f}\t"
+                + f"{round(variables[3][d]*1000/1000):5.3f}\t"
+                + f"{round(variables[4][d]*10/10):4.1f}\t"
+                + f"{round(variables[5][d]*10/10):4.1f}\n"
+            )
