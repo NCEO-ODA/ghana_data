@@ -298,6 +298,8 @@ def calculate_z_score(
 
 def do_map(
     field,
+    title,
+    units,
     contour=True,
     with_logo=True,
     cmap="cividis",
@@ -353,7 +355,7 @@ def do_map(
         "right", size="5%", pad=0.05, axes_class=plt.Axes
     )
     cbar = fig.colorbar(im, cax=cax, extend="max")
-    cbar.set_label("anomaly", fontsize=12)
+    cbar.set_label(units, fontsize=12)
 
     ax.set_extent([-3.5, 1.25, 4.5, 11.7], ccrs.PlateCarree())
     lon_formatter = LongitudeFormatter(zero_direction_label=False)
@@ -374,4 +376,5 @@ def do_map(
     gl.yformatter = LATITUDE_FORMATTER
     if with_logo:
         add_logo()
+    fig.set_title(title)
     return fig

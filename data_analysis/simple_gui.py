@@ -21,18 +21,18 @@ from .basic_calcs import (
 ## needed. Keep dictionary keys the same as ERA5_VARIABLES eg
 
 ERA5_UNITS = {
-    "hum": "kPa",
-    "precip": r"$mm\cdot d^{-1}$",
-    "ssrd": r"$W\cdot m^{-2}$",
-    "t2m_max": r"$^{\circ}C$",
-    "t2m_mean": r"$^{\circ}C$",
-    "t2m_min": r"$^{\circ}C$",
-    "wspd": r"$m\cdot s^{-1}$",
+    "hum": r"Vapour Pressure \n $[kPa]$",
+    "precip": r"Daily precipitation \n $mm\cdot d^{-1}$",
+    "ssrd": r"Daily irradiance \n $W\cdot m^{-2}$",
+    "t2m_max": r"Maximum daily temperature \n $^{\circ}C$",
+    "t2m_mean": r"Mean daily temperature \n $^{\circ}C$",
+    "t2m_min": r"Minimum daily temperature \n $^{\circ}C$",
+    "wspd": r"Windspeed \n $m\cdot s^{-1}$",
 }
 
 MODIS_UNITS = {
-    "Fpar_500m": "[-]",
-    "Lai_500m": r"$m^{2}\cdot m^{-2}$",
+    "Fpar_500m": r"$fAPAR$ \n [-]",
+    "Lai_500m": r"Leaf Area Index \n $m^{2}\cdot m^{-2}$",
     "FparLai_QC": "N/A",
 }
 
