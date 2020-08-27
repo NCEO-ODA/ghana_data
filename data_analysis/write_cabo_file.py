@@ -88,7 +88,7 @@ def write_cabo_file(
             "t2m_min",
             "t2m_max",
             "hum",
-            "wdsp",
+            "wspd",
             "precip",
         ]
     ]
