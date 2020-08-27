@@ -16,6 +16,44 @@ from .basic_calcs import (
     get_one_year,
 )
 
+## UNITS for different products.
+## Use a string for the units, can use latex if
+## needed. Keep dictionary keys the same as ERA5_VARIABLES eg
+
+ERA5_UNITS = {
+    "hum": "Vapour Pressure \n" + r"$[kPa]$",
+    "precip": "Daily precipitation \n" + r"$mm\cdot d^{-1}$",
+    "ssrd": "Daily irradiance \n" + r"$W\cdot m^{-2}$",
+    "t2m_max": "Maximum daily temperature \n" + r"$^{\circ}C$",
+    "t2m_mean": "Mean daily temperature \n" + r" $^{\circ}C$",
+    "t2m_min": "Minimum daily temperature \n" + r" $^{\circ}C$",
+    "wspd": "Windspeed \n" + r" $m\cdot s^{-1}$",
+}
+
+MODIS_UNITS = {
+    "Fpar_500m": "$fAPAR$ \n" + r" [-]",
+    "Lai_500m": "Leaf Area Index \n" + r" $m^{2}\cdot m^{-2}$",
+    "FparLai_QC": "N/A",
+}
+
+TAMSAT_UNITS = {
+    "ecan_gb": "Apples",
+    "esoil_gb": "Pears",
+    "precip": "Potatoes",
+    "runoff": "Apples",
+    "smc_avail_top": "Apples",
+    "smcl_1": "Apples",
+    "smcl_2": "Apples",
+    "smcl_3": "Pears",
+    "smcl_4": "Cherries",
+}
+
+PRODUCT_UNITS = {
+    "ERA5": ERA5_UNITS,
+    "TAMSAT": TAMSAT_UNITS,
+    "MODIS": MODIS_UNITS,
+}
+
 variable_lists = {
     "TAMSAT": TAMSAT_VARIABLES,
     "ERA5": ERA5_VARIABLES,
@@ -77,12 +115,32 @@ def plot_anomaly(product, variable, year, month, cmap, boundz, lta_period):
     z_score = calculate_z_score(
         ds, curr_month_number=month, clim_mean=m, clim_std=s
     )
+    title = f"Anomaly map {product}-{variable} vs LTA {lta_period}"
+
     if product in ["ERA5", "TAMSAT"]:
-        fig = do_map(z_score, contour=True, cmap=cmap, vmin=vmin, vmax=vmax)
+        fig = do_map(
+            z_score,
+            title,
+            r"$z$-score",
+            contour=True,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+        )
     else:
-        fig = do_map(z_score, contour=False, cmap=cmap, vmin=vmin, vmax=vmax)
+        fig = do_map(
+            z_score,
+            title,
+            r"$z$-score",
+            contour=False,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+        )
     for ext in ["png", "pdf"]:
-        print(f"Saving to {product}_anom_{variable}_{lta_period}_zscore{ext}")
+        print(
+            f"Saving to {product}_anom_{variable}_{lta_period}_zscore.{ext}"
+        )
         fig.savefig(
             f"{product}_anom_{variable}_{lta_period}_zscore.{ext}",
             dpi=175,
@@ -112,6 +170,8 @@ def plot_field(product, variable, year, month, cmap, boundz):
         What LTA period
     """
     ds = get_one_year(product, variable, year)
+    title = f"{product}-{variable}"
+    units = PRODUCT_UNITS[product][variable]
     if product in ["precip", "runoff", "rfe_filled"]:
         # This are aggregated monthly fluxes
         curr_month = (
@@ -133,14 +193,26 @@ def plot_field(product, variable, year, month, cmap, boundz):
     )
     if product in ["ERA5", "TAMSAT"]:
         fig = do_map(
-            curr_month, contour=True, cmap=cmap, vmin=vmin, vmax=vmax
+            curr_month,
+            title,
+            units,
+            contour=True,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
         )
     else:
         fig = do_map(
-            curr_month, contour=False, cmap=cmap, vmin=vmin, vmax=vmax
+            curr_month,
+            title,
+            units,
+            contour=False,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
         )
     for ext in ["png", "pdf"]:
-        print(f"Saving to {product}_{variable}{ext}")
+        print(f"Saving to {product}_{variable}.{ext}")
         fig.savefig(
             f"{product}_{variable}.{ext}", dpi=175, bbox_inches="tight",
         )
