@@ -87,7 +87,7 @@ def to_sensible_format(loc, year):
     if "expver" in ds.coords:
         LOG.info("ERA5RT data. Expunging one dimension, hope it works")
         ds = ds.drop_sel({"expver": 1}).squeeze()
-    ssrd = ds.ssrd.resample(time="1D").mean() / 1000.0
+    ssrd = ds.ssrd.resample(time="1D").sum() / 1000.0
     write_tif(ssrd.values, "ssrd", year, loc, geoT, srs)
     tp = ds.tp.resample(time="1D").sum() * 1000.0
     tp = xr.where(tp >= 0.001, tp, 0)
