@@ -376,5 +376,5 @@ def do_map(
     gl.yformatter = LATITUDE_FORMATTER
     if with_logo:
         add_logo()
-    fig.set_title(title)
+    fig.suptitle(title, fontsize=16)
     return fig

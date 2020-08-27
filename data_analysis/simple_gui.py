@@ -21,18 +21,18 @@ from .basic_calcs import (
 ## needed. Keep dictionary keys the same as ERA5_VARIABLES eg
 
 ERA5_UNITS = {
-    "hum": r"Vapour Pressure \n $[kPa]$",
-    "precip": r"Daily precipitation \n $mm\cdot d^{-1}$",
-    "ssrd": r"Daily irradiance \n $W\cdot m^{-2}$",
-    "t2m_max": r"Maximum daily temperature \n $^{\circ}C$",
-    "t2m_mean": r"Mean daily temperature \n $^{\circ}C$",
-    "t2m_min": r"Minimum daily temperature \n $^{\circ}C$",
-    "wspd": r"Windspeed \n $m\cdot s^{-1}$",
+    "hum": "Vapour Pressure \n" + r"$[kPa]$",
+    "precip": "Daily precipitation \n" + r"$mm\cdot d^{-1}$",
+    "ssrd": "Daily irradiance \n" + r"$W\cdot m^{-2}$",
+    "t2m_max": "Maximum daily temperature \n" + r"$^{\circ}C$",
+    "t2m_mean": "Mean daily temperature \n" + r" $^{\circ}C$",
+    "t2m_min": "Minimum daily temperature \n" + r" $^{\circ}C$",
+    "wspd": "Windspeed \n" + r" $m\cdot s^{-1}$",
 }
 
 MODIS_UNITS = {
-    "Fpar_500m": r"$fAPAR$ \n [-]",
-    "Lai_500m": r"Leaf Area Index \n $m^{2}\cdot m^{-2}$",
+    "Fpar_500m": "$fAPAR$ \n" + r" [-]",
+    "Lai_500m": "Leaf Area Index \n" + r" $m^{2}\cdot m^{-2}$",
     "FparLai_QC": "N/A",
 }
 
@@ -138,7 +138,9 @@ def plot_anomaly(product, variable, year, month, cmap, boundz, lta_period):
             vmax=vmax,
         )
     for ext in ["png", "pdf"]:
-        print(f"Saving to {product}_anom_{variable}_{lta_period}_zscore{ext}")
+        print(
+            f"Saving to {product}_anom_{variable}_{lta_period}_zscore.{ext}"
+        )
         fig.savefig(
             f"{product}_anom_{variable}_{lta_period}_zscore.{ext}",
             dpi=175,
@@ -210,7 +212,7 @@ def plot_field(product, variable, year, month, cmap, boundz):
             vmax=vmax,
         )
     for ext in ["png", "pdf"]:
-        print(f"Saving to {product}_{variable}{ext}")
+        print(f"Saving to {product}_{variable}.{ext}")
         fig.savefig(
             f"{product}_{variable}.{ext}", dpi=175, bbox_inches="tight",
         )
