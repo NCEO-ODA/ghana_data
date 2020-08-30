@@ -8,7 +8,8 @@ from textwrap import dedent
 import gdal
 import numpy as np
 import pandas as pd
-from basic_calcs import ERA5_VARIABLES, get_all_years, get_one_year
+
+from .basic_calcs import ERA5_VARIABLES, get_all_years, get_one_year
 
 DEM_FILE = "/vsicurl/http://www2.geog.ucl.ac.uk/~ucfafyi/eles/global_dem.vrt"
 
@@ -47,10 +48,12 @@ def retrieve_pixel_value(lon, lat, data_source):
 
 def get_era5_data(years):
     if type(years) != list:
-        years = list(years)
+        years = [
+            years,
+        ]
     if len(years) == 1:
         data_stacks = {
-            variable: get_one_year("ERA5", variable, years)
+            variable: get_one_year("ERA5", variable, years[0])
             for variable in ERA5_VARIABLES
         }
     else:
