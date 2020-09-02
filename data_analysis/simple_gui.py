@@ -37,15 +37,22 @@ MODIS_UNITS = {
 }
 
 TAMSAT_UNITS = {
-    "ecan_gb": "Apples",
-    "esoil_gb": "Pears",
-    "precip": "Potatoes",
-    "runoff": "Apples",
-    "smc_avail_top": "Apples",
-    "smcl_1": "Apples",
-    "smcl_2": "Apples",
-    "smcl_3": "Pears",
-    "smcl_4": "Cherries",
+    "ecan_gb": "Evaporation from surface store \n"
+    + r"(kg m$^{-2}$ s$^{-1}$)",
+    "esoil_gb": "Evaporationtranspiration \n" + r"(kg m$^{-2}$ s$^{-1}$)",
+    "precip": "Precipitation rate \n"
+    + r"(kg m$^{-2}$ s$^{-1}$)",  # multiply this by 86400 to get (mm day-1)
+    "runoff": "Gridbox runoff rate \n" + r"(kg m$^{-2}$ s$^{-1}$)",
+    "smc_avail_top": "Available soil moisture in surface layer \n"
+    + r"(kg m$^{-2}$)",  # divide by 1000 to get (m3 m-3)
+    "smcl_1": "Top layer soil moisture \n"
+    + r"(kg m$^{-2}$)",  # 10cm thick, divide by 100 to get (m3 m-3)
+    "smcl_2": "Second layer soil moisture \n"
+    + r"(kg m$^{-2}$)",  # 25cm thick, divide by 250 to get (m3 m-3)
+    "smcl_3": "Third layer soil moisture \n"
+    + r"(kg m$^{-2}$)",  # 65cm thick, divide by 650 to get (m3 m-3)
+    "smcl_4": "Fourth layer soil moisture \n"
+    + r"(kg m$^{-2}$)",  # 200cm thick, divide by 2000 to get (m3 m-3)
 }
 
 PRODUCT_UNITS = {
@@ -172,7 +179,7 @@ def plot_field(product, variable, year, month, cmap, boundz):
     ds = get_one_year(product, variable, year)
     title = f"{product}-{variable}"
     units = PRODUCT_UNITS[product][variable]
-    if product in ["precip", "runoff", "rfe_filled"]:
+    if variable in ["precip", "runoff", "rfe_filled"]:
         # This are aggregated monthly fluxes
         curr_month = (
             ds.resample(time="1MS")
