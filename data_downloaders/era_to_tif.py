@@ -26,7 +26,7 @@ LOG.propagate = False
 
 def write_tif(arr, var, year, loc, geoT, srs):
     n_bands, ny, nx = arr.shape
-    fname_out = (loc / f"{var}_{year}.tif").as_posix()
+    fname_out = (loc / f"global{var}_{year}.tif").as_posix()
     drv = gdal.GetDriverByName("GTiff")
     ds = drv.Create(
         fname_out,
@@ -59,17 +59,18 @@ def write_tif(arr, var, year, loc, geoT, srs):
 
 
 @click.command()
+@click.argument("loc_name")
 @click.argument("loc")
 @click.argument("year")
 # @click.option("--config_file", type=click.Path())
-def to_sensible_format(loc, year):
+def to_sensible_format(loc_name, loc, year):
     year = int(year)
     loc = Path(loc)
     LOG.info(f"Doing {year} on {loc.as_posix()}")
     if not loc.exists():
         raise IOError(f"{loc} does not exist!")
     g = gdal.Open(
-        f'NETCDF:"{loc.as_posix()}/netcdf/ERA5_Ghana.{year}_01.nc":ssrd'
+        f'NETCDF:"{loc.as_posix()}/netcdf/ERA5_{loc_name}.{year}_01.nc":ssrd'
     )
     geoT = g.GetGeoTransform()
     srs = osr.SpatialReference()
@@ -78,7 +79,7 @@ def to_sensible_format(loc, year):
     # nx, ny = g.RasterXSize, g.RasterYSize
 
     fnames = sorted(
-        [f for f in (loc / "netcdf").glob(f"ERA5_Ghana.{year}_??.nc")]
+        [f for f in (loc / "netcdf").glob(f"ERA5_{loc_name}.{year}_??.nc")]
     )
     ds = xr.concat(
         [xr.open_dataset(f, chunks={}, mask_and_scale=True) for f in fnames],
