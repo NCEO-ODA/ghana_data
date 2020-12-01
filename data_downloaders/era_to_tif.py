@@ -24,9 +24,9 @@ if not LOG.handlers:
 LOG.propagate = False
 
 
-def write_tif(arr, var, year, loc, geoT, srs):
+def write_tif(arr, var, year, loc_name, loc, geoT, srs):
     n_bands, ny, nx = arr.shape
-    fname_out = (loc / f"global{var}_{year}.tif").as_posix()
+    fname_out = (loc / f"{loc_name}_{var}_{year}.tif").as_posix()
     drv = gdal.GetDriverByName("GTiff")
     ds = drv.Create(
         fname_out,
@@ -89,24 +89,24 @@ def to_sensible_format(loc_name, loc, year):
         LOG.info("ERA5RT data. Expunging one dimension, hope it works")
         ds = ds.drop_sel({"expver": 1}).squeeze()
     ssrd = ds.ssrd.resample(time="1D").sum() / 1000.0
-    write_tif(ssrd.values, "ssrd", year, loc, geoT, srs)
+    write_tif(ssrd.values, "ssrd", year, loc_name, loc, geoT, srs)
     tp = ds.tp.resample(time="1D").sum() * 1000.0
     tp = xr.where(tp >= 0.001, tp, 0)
-    write_tif(tp.values, "precip", year, loc, geoT, srs)
+    write_tif(tp.values, "precip", year, loc_name, loc, geoT, srs)
     t2m = ds.t2m.resample(time="1D").mean() - 273.15
-    write_tif(t2m.values, "t2m_mean", year, loc, geoT, srs)
+    write_tif(t2m.values, "t2m_mean", year, loc_name, loc, geoT, srs)
     t2m = ds.t2m.resample(time="1D").min() - 273.15
-    write_tif(t2m.values, "t2m_min", year, loc, geoT, srs)
+    write_tif(t2m.values, "t2m_min", year, loc_name, loc, geoT, srs)
     t2m = ds.t2m.resample(time="1D").max() - 273.15
-    write_tif(t2m.values, "t2m_max", year, loc, geoT, srs)
+    write_tif(t2m.values, "t2m_max", year, loc_name, loc, geoT, srs)
     tdew = ds.d2m.resample(time="1D").mean() - 273.15
     tmp = (17.27 * tdew) / (tdew + 237.3)
     ea = 0.6108 * np.exp(tmp)
-    write_tif(ea.values, "hum", year, loc, geoT, srs)
+    write_tif(ea.values, "hum", year, loc_name, loc, geoT, srs)
     u10 = ds.u10.resample(time="1D").mean()
     v10 = ds.v10.resample(time="1D").mean()
     wspd = np.sqrt(u10 ** 2 + v10 ** 2)
-    write_tif(wspd.values, "wspd", year, loc, geoT, srs)
+    write_tif(wspd.values, "wspd", year, loc_name, loc, geoT, srs)
     LOG.info("Successfully done!")
 
 
