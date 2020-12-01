@@ -178,7 +178,7 @@ def get_epsg_code(ds_name):
     return epsg_code
 
 
-def get_climatology(product, variable, url=JASMIN_URL, period="long"):
+def get_climatology_url(product, variable, url=JASMIN_URL, period="long"):
     if product.upper() == "ERA5":
         product = "ERA"
     if not product.upper() in ["ERA", "TAMSAT", "MODIS"]:
@@ -196,8 +196,7 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
         std_url = (
             f"/vsicurl/{url}/ERA5_meteo/clim_std_{variable}_{period}.tif"
         )
-        mean = xr.open_rasterio(mean_url, chunks={"band": 1})
-        std = xr.open_rasterio(std_url, chunks={"band": 1})
+        chunks = {"band": 1}
 
     elif product == "TAMSAT":
         if variable not in TAMSAT_VARIABLES:
@@ -206,8 +205,7 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
             )
         mean_url = f"/vsicurl/{url}/soil_moisture/nc/GTiff/clim_mean_{variable}_{period}.tif"
         std_url = f"/vsicurl/{url}/soil_moisture/nc/GTiff/clim_std_{variable}_{period}.tif"
-        mean = xr.open_rasterio(mean_url, chunks={"band": 1})
-        std = xr.open_rasterio(std_url, chunks={"band": 1})
+        chunks = {"band": 1}
 
     elif product == "MODIS":
         if variable not in MODIS_VARIABLES:
@@ -216,15 +214,18 @@ def get_climatology(product, variable, url=JASMIN_URL, period="long"):
             )
         mean_url = f"/vsicurl/{url}/MCD15/clim_mean_{variable}_{period}.tif"
         std_url = f"/vsicurl/{url}/MCD15/clim_std_{variable}_{period}.tif"
-        mean = xr.open_rasterio(
-            mean_url, chunks={"band": 1, "x": 256, "y": 256}
-        )
-        std = xr.open_rasterio(
-            std_url, chunks={"band": 1, "x": 256, "y": 256}
-        )
+        chunks = {"band": 1, "x": 256, "y": 256}
+    return mean_url, std_url, chunks
+
+
+def get_climatology(product, variable, url=JASMIN_URL, period="long"):
+    mean_url, std_url, chunks = get_climatology_url(
+        product, variable, url=url, period=period
+    )
+    mean = xr.open_rasterio(mean_url, chunks=chunks)
+    std = xr.open_rasterio(std_url, chunks=chunks)
     mean = mean.rename({"band": "month"})
     std = std.rename({"band": "month"})
-
     return mean, std
 
 
