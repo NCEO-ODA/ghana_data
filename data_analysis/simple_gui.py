@@ -3,7 +3,10 @@
 """
 import datetime as dt
 
-import ipywidgets.widgets as widgets
+try:
+    import ipywidgets.widgets as widgets
+except ImportError:
+    print("You will not be able to use the interactive GUI")
 
 from .basic_calcs import (
     ERA5_VARIABLES,
