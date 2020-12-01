@@ -43,7 +43,8 @@ MODIS_UNITS = {
 }
 
 TAMSAT_UNITS = {
-    "ecan_gb": "Evaporation from surface store \n" + r"(kg m$^{-2}$ s$^{-1}$)",
+    "ecan_gb": "Evaporation from surface store \n"
+    + r"(kg m$^{-2}$ s$^{-1}$)",
     "esoil_gb": "Evaporationtranspiration \n" + r"(kg m$^{-2}$ s$^{-1}$)",
     "precip": "Precipitation rate \n"
     + r"(kg m$^{-2}$ s$^{-1}$)",  # multiply this by 86400 to get (mm day-1)
