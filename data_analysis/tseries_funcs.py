@@ -43,8 +43,7 @@ MODIS_UNITS = {
 }
 
 TAMSAT_UNITS = {
-    "ecan_gb": "Evaporation from surface store \n"
-    + r"(kg m$^{-2}$ s$^{-1}$)",
+    "ecan_gb": "Evaporation from surface store \n" + r"(kg m$^{-2}$ s$^{-1}$)",
     "esoil_gb": "Evaporationtranspiration \n" + r"(kg m$^{-2}$ s$^{-1}$)",
     "precip": "Precipitation rate \n"
     + r"(kg m$^{-2}$ s$^{-1}$)",  # multiply this by 86400 to get (mm day-1)
@@ -126,6 +125,7 @@ def crop_ds(url, year, outputBounds, xRes_lc, yRes_lc):
         outputBounds=outputBounds,
         xRes=xRes_lc,
         yRes=yRes_lc,
+        warpOptions=["CUTLINE_ALL_TOUCHED=TRUE"],
     )
 
     n_bands = product.RasterCount
@@ -169,6 +169,7 @@ def get_one_region_landcover(
     period="long",
     landcover_file="croplands_2018_LC100.tif",
     remote_url=JASMIN_URL,
+    classes_to_ignore=[200, 0, 50, 60, 70, 80, 90, 100],
 ):
     if ax is None:
         ax = plt.gca()
@@ -193,6 +194,7 @@ def get_one_region_landcover(
         cropToCutline=True,
         xRes=xRes_lc,
         yRes=yRes_lc,
+        warpOptions=["CUTLINE_ALL_TOUCHED=TRUE"],
     )
     meta_lc = gdal.Info(lc, format="json")
     outputBounds = (
@@ -218,17 +220,23 @@ def get_one_region_landcover(
         product_magnitude = np.where(
             product_magnitude <= 10, product_magnitude / 100.0, np.nan
         )
+    elif variable == "precip":
+        product_magnitude = np.where(
+            product_magnitude < 0, np.nan, product_magnitude
+        )
 
     clim_mean = crop_ds(clim_mean, year, outputBounds, xRes_lc, yRes_lc)
     clim_std = crop_ds(clim_std, year, outputBounds, xRes_lc, yRes_lc)
 
     lc = lc.ReadAsArray()
-    lc_m = np.isin(lc, [200, 0, 50, 60, 70, 80, 90, 100], invert=True)
+    lc_m = np.isin(lc, classes_to_ignore, invert=True)
 
     product_magnitude = 1.0 * product_magnitude
-    product_magnitude[:, ~lc] = np.nan
+    product_magnitude[:, ~lc_m] = np.nan
     clim_mean[:, ~lc_m] = np.nan
     clim_std[:, ~lc_m] = np.nan
+    if variable == "precip":
+        clim_mean = np.where(clim_mean < 0, np.nan, clim_mean)
 
     ds = to_xarray(product_magnitude, dates)
     if variable in ["precip", "rfe_filled", "runoff"]:
@@ -253,6 +261,7 @@ def get_one_region_landcover(
     ax.fill_between(dates, x - y, x + y, color=line_color, alpha=0.5)
     x_clim = np.nanmean(clim_mean, axis=(1, 2))
     y_clim = np.nanmean(clim_std, axis=(1, 2))
+
     line = ax.plot(clim_dates, x_clim, "-", label="LTA")
     line_color = line[0].get_c()
     ax.fill_between(
