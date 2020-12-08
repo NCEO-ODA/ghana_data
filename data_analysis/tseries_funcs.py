@@ -18,7 +18,6 @@ from .basic_calcs import (
     get_one_year,
 )
 
-
 JASMIN_URL = "http://gws-access.ceda.ac.uk/public/odanceo/"
 
 
@@ -176,7 +175,7 @@ def get_one_region_landcover(
     period="recent",
     landcover_file="croplands_2018_LC100.tif",
     remote_url=JASMIN_URL,
-    classes_to_ignore=[255,200, 0, 50, 60, 70, 80, 90, 100],
+    classes_to_ignore=[255, 200, 0, 50, 60, 70, 80, 90, 100],
 ):
     if ax is None:
         ax = plt.gca()
@@ -261,20 +260,15 @@ def get_one_region_landcover(
 
     dates = monthly_ds.coords["t"].values
     clim_dates = [dt.datetime(year, i, 1) for i in range(1, 13)]
-    
-    x = np.array([np.mean(x[np.isfinite(x)])
-               for x in product_magnitude])
-    y = np.array([np.std(x[np.isfinite(x)])
-               for x in product_magnitude])
+
+    x = np.array([np.mean(x[np.isfinite(x)]) for x in product_magnitude])
+    y = np.array([np.std(x[np.isfinite(x)]) for x in product_magnitude])
 
     line = ax.plot(dates, x, "-", label=year)
     line_color = line[0].get_c()
     ax.fill_between(dates, x - y, x + y, color=line_color, alpha=0.5)
-    x_clim = np.array([np.mean(x[np.isfinite(x)])
-               for x in clim_mean])
-    y_clim = np.array([np.mean(x[np.isfinite(x)])
-               for x in clim_std])
-
+    x_clim = np.array([np.mean(x[np.isfinite(x)]) for x in clim_mean])
+    y_clim = np.array([np.mean(x[np.isfinite(x)]) for x in clim_std])
 
     line = ax.plot(clim_dates, x_clim, "-", label="LTA")
     line_color = line[0].get_c()
