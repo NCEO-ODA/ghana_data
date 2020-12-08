@@ -73,6 +73,10 @@ def link_neodc_files(
     """Creates symbolic links from the NEODC MODIS MCD15
     archive to the local processing archive for one year."""
 
+    loc = (mcd_location / f"{curr_year}")
+    if not loc.exists():
+        return
+    
     files = [
         f
         for f in (mcd_location / f"{curr_year}").rglob("MCD15A2H*.hdf")
