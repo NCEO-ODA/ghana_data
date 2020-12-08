@@ -50,7 +50,7 @@ if __name__ == "__main__":
     if ERA5:
         ####### ERA5
         g = gdal.Open(
-            "/gws/nopw/j04/odanceo/public/ERA5_meteo/precip_2001.tif"
+            "/gws/nopw/j04/odanceo/public/ERA5_meteo/Ghana_precip_2001.tif"
         )
         geoT = g.GetGeoTransform()
         proj = g.GetProjectionRef()
