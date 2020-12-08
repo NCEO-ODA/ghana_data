@@ -3,11 +3,6 @@
 """
 import datetime as dt
 
-try:
-    import ipywidgets.widgets as widgets
-except ImportError:
-    print("You will not be able to use the interactive GUI")
-
 from .basic_calcs import (
     ERA5_VARIABLES,
     MODIS_VARIABLES,
@@ -18,6 +13,12 @@ from .basic_calcs import (
     get_climatology,
     get_one_year,
 )
+
+try:
+    import ipywidgets.widgets as widgets
+except ImportError:
+    print("You will not be able to use the interactive GUI")
+
 
 ## UNITS for different products.
 ## Use a string for the units, can use latex if
@@ -224,7 +225,9 @@ def plot_field(product, variable, year, month, cmap, boundz):
     for ext in ["png", "pdf"]:
         print(f"Saving to {product}_{variable}.{ext}")
         fig.savefig(
-            f"{product}_{variable}.{ext}", dpi=175, bbox_inches="tight",
+            f"{product}_{variable}.{ext}",
+            dpi=175,
+            bbox_inches="tight",
         )
 
 
