@@ -17,7 +17,7 @@ from .basic_calcs import (
     get_climatology_url,
     get_one_year,
 )
-from .simple_gui import PRODUCT_UNITS
+
 
 JASMIN_URL = "http://gws-access.ceda.ac.uk/public/odanceo/"
 
@@ -45,11 +45,11 @@ MODIS_UNITS = {
 TAMSAT_UNITS = {
     "ecan_gb": "Evaporation from surface store \n" + r"(kg m$^{-2}$ s$^{-1}$)",
     "esoil_gb": "Evaporationtranspiration \n" + r"(kg m$^{-2}$ s$^{-1}$)",
-    "precip": "Precipitation rate \n"
-    + r"(kg m$^{-2}$ s$^{-1}$)",  # multiply this by 86400 to get (mm day-1)
+    "precip": "Accum. Monthly Precipitation\n"
+    + "($mm$ month$^{-1}$)",  # multiply this by 86400 to get (mm day-1)
     "runoff": "Gridbox runoff rate \n" + r"(kg m$^{-2}$ s$^{-1}$)",
-    "smc_avail_top": "Available soil moisture in surface layer \n"
-    + r"(kg m$^{-2}$)",  # divide by 1000 to get (m3 m-3)
+    "smc_avail_top": "Av. soil moist. surf. layer \n"
+    + r"($m^{3} m^{-3}$)",  # divide by 1000 to get (m3 m-3)
     "smcl_1": "Top layer soil moisture \n"
     + r"(kg m$^{-2}$)",  # 10cm thick, divide by 100 to get (m3 m-3)
     "smcl_2": "Second layer soil moisture \n"
@@ -60,6 +60,12 @@ TAMSAT_UNITS = {
     + r"(kg m$^{-2}$)",  # 200cm thick, divide by 2000 to get (m3 m-3)
 }
 
+
+PRODUCT_UNITS = {
+    "ERA5": ERA5_UNITS,
+    "TAMSAT": TAMSAT_UNITS,
+    "MODIS": MODIS_UNITS,
+}
 
 variable_lists = {
     "TAMSAT": TAMSAT_VARIABLES,
@@ -166,10 +172,10 @@ def get_one_region_landcover(
     region_where,
     region_ds="GHA_admbndp2_1m_GAUL.shp",
     ax=None,
-    period="long",
+    period="recent",
     landcover_file="croplands_2018_LC100.tif",
     remote_url=JASMIN_URL,
-    classes_to_ignore=[200, 0, 50, 60, 70, 80, 90, 100],
+    classes_to_ignore=[255,200, 0, 50, 60, 70, 80, 90, 100],
 ):
     if ax is None:
         ax = plt.gca()
@@ -206,7 +212,7 @@ def get_one_region_landcover(
         "MODIS": f"/vsicurl/{remote_url}/MCD15/{variable}_{year}wgs84.tif",
         "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
         + f"nc/GTiff/tamsat_{variable}_{year}.tif",
-        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/Ghana_{variable}_{year}.tif",
     }
     url = urls[product]
     product_magnitude, dates = crop_ds(
@@ -237,6 +243,7 @@ def get_one_region_landcover(
     clim_std[:, ~lc_m] = np.nan
     if variable == "precip":
         clim_mean = np.where(clim_mean < 0, np.nan, clim_mean)
+        clim_std = np.where(clim_std > 1000, np.nan, clim_std)
 
     ds = to_xarray(product_magnitude, dates)
     if variable in ["precip", "rfe_filled", "runoff"]:
@@ -253,14 +260,20 @@ def get_one_region_landcover(
 
     dates = monthly_ds.coords["t"].values
     clim_dates = [dt.datetime(year, i, 1) for i in range(1, 13)]
+    
+    x = np.array([np.mean(x[np.isfinite(x)])
+               for x in product_magnitude])
+    y = np.array([np.std(x[np.isfinite(x)])
+               for x in product_magnitude])
 
-    x = np.nanmean(product_magnitude, axis=(1, 2))
-    y = np.nanstd(product_magnitude, axis=(1, 2))
     line = ax.plot(dates, x, "-", label=year)
     line_color = line[0].get_c()
     ax.fill_between(dates, x - y, x + y, color=line_color, alpha=0.5)
-    x_clim = np.nanmean(clim_mean, axis=(1, 2))
-    y_clim = np.nanmean(clim_std, axis=(1, 2))
+    x_clim = np.array([np.mean(x[np.isfinite(x)])
+               for x in clim_mean])
+    y_clim = np.array([np.mean(x[np.isfinite(x)])
+               for x in clim_std])
+
 
     line = ax.plot(clim_dates, x_clim, "-", label="LTA")
     line_color = line[0].get_c()
