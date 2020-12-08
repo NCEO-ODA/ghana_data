@@ -106,9 +106,7 @@ def get_available_dates(url, start_date, end_date=None):
 
 
 def download_granule_list(url, tiles):
-    """For a particular product and date, obtain the data granule URLs.
-
-    """
+    """For a particular product and date, obtain the data granule URLs."""
 
     if not isinstance(tiles, type([])):
         tiles = [tiles]
