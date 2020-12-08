@@ -62,7 +62,7 @@ def get_all_years(
         "MODIS": f"/vsicurl/{remote_url}/MCD15/{variable}_{first_year}wgs84.tif",
         "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
         + f"nc/GTiff/tamsat_{variable}_{first_year}.tif",
-        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{first_year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/Ghana_{variable}_{first_year}.tif",
     }
     epsg = get_epsg_code(urls[product])
 
@@ -86,7 +86,7 @@ def get_one_year(product, variable, year, remote_url=JASMIN_URL):
         "MODIS": f"/vsicurl/{remote_url}/MCD15/{variable}_{year}wgs84.tif",
         "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
         + f"nc/GTiff/tamsat_{variable}_{year}.tif",
-        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/{variable}_{year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/Ghana_{variable}_{year}.tif",
     }
     url = urls[product]
     g = gdal.Open(url, gdal.GA_ReadOnly)
@@ -118,7 +118,7 @@ def check_dates(remote_url=JASMIN_URL):
         "MODIS": f"/vsicurl/{remote_url}/MCD15/Fpar_500m_{year}wgs84.tif",
         "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
         + f"nc/GTiff/tamsat_runoff_{year}.tif",
-        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/ssrd_{year}.tif",
+        "ERA5": f"/vsicurl/{remote_url}/ERA5_meteo/Ghana_ssrd_{year}.tif",
     }
     dates = {}
     for product, url in urls.items():
