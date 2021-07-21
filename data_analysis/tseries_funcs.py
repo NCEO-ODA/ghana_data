@@ -1,10 +1,10 @@
 import datetime as dt
 
-import gdal
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
+from osgeo import gdal
 
 from .basic_calcs import (
     ERA5_VARIABLES,
@@ -172,6 +172,7 @@ def get_one_region_landcover(
     region_where,
     region_ds="GHA_admbndp2_1m_GAUL.shp",
     ax=None,
+    temporal_resample="1MS",
     period="recent",
     landcover_file="croplands_2018_LC100.tif",
     remote_url=JASMIN_URL,
@@ -248,11 +249,11 @@ def get_one_region_landcover(
     ds = to_xarray(product_magnitude, dates)
     if variable in ["precip", "rfe_filled", "runoff"]:
         monthly_ds = ds.resample(
-            {"t": "1MS"}
+            {"t": temporal_resample}
         ).sum()  # ,  loffset=pd.Timedelta(14, 'd'))
     else:
         monthly_ds = ds.resample(
-            {"t": "1MS"}
+            {"t": temporal_resample}
         ).mean()  # ,  loffset=pd.Timedelta(14, 'd'))
 
     product_magnitude = monthly_ds.variable.values
@@ -263,7 +264,7 @@ def get_one_region_landcover(
 
     x = np.array([np.mean(x[np.isfinite(x)]) for x in product_magnitude])
     y = np.array([np.std(x[np.isfinite(x)]) for x in product_magnitude])
-
+    retval = {"current": {"mean": x, "std": y, "time": dates}}
     line = ax.plot(dates, x, "-", label=year)
     line_color = line[0].get_c()
     ax.fill_between(dates, x - y, x + y, color=line_color, alpha=0.5)
@@ -279,5 +280,7 @@ def get_one_region_landcover(
         color=line_color,
         alpha=0.5,
     )
+    retval["LTA"] = {"mean": x_clim, "std": y_clim, "time": clim_dates}
     ax.set_ylabel(PRODUCT_UNITS[product][variable], fontsize=9)
     ax.legend(loc="upper right", fontsize=9)
+    return retval
