@@ -51,7 +51,7 @@ def get_all_years(
     product,
     variable,
     first_year=2002,
-    last_year=None,
+    last_year=2020,
     n_workers=8,
     remote_url=JASMIN_URL,
 ):
@@ -114,6 +114,7 @@ def get_one_year(product, variable, year, remote_url=JASMIN_URL):
 
 def check_dates(remote_url=JASMIN_URL):
     year = dt.datetime.now().year
+    year = 2020
     urls = {
         "MODIS": f"/vsicurl/{remote_url}/MCD15/Fpar_500m_{year}wgs84.tif",
         "TAMSAT": f"/vsicurl/{remote_url}/soil_moisture/"
