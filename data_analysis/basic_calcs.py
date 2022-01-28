@@ -9,7 +9,7 @@ from pathlib import Path
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import gdal
+from osgeo import gdal
 import matplotlib.colors as colors
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt

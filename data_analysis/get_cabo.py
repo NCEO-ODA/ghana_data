@@ -5,7 +5,7 @@ import struct
 from pathlib import Path
 from textwrap import dedent
 
-import gdal
+from osgeo import gdal
 import numpy
 from basic_calcs import ERA5_VARIABLES, get_all_years, get_one_year
 

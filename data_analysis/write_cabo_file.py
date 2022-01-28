@@ -5,7 +5,7 @@ import struct
 from pathlib import Path
 from textwrap import dedent
 
-import gdal
+from osgeo import gdal
 import numpy as np
 import pandas as pd
 
