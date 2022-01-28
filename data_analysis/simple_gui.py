@@ -239,7 +239,7 @@ def plot_field(product, variable, year, month, cmap, boundz):
 
 
 def do_plots_gui():
-    #year = dt.datetime.now().year
+    # year = dt.datetime.now().year
     year = 2020
     last_dates = check_dates()
     product = "TAMSAT"
